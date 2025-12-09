@@ -3,22 +3,29 @@ import mongoose from "mongoose";
 const orderSchema = new mongoose.Schema({
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
   sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "Seller" },
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
 
-  quantity: Number,
-  totalPrice: Number,
-  
+  items: [
+    {
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+      quantity: Number,
+      price: Number
+    }
+  ],
+
+  totalAmount: Number,
+  shippingAddress: String,
+
   status: {
     type: String,
-    enum: ["placed", "packed", "shipped", "delivered", "cancelled"],
-    default: "placed"
+    enum: ["pending_payment", "paid", "packed", "shipped", "delivered", "cancelled"],
+    default: "pending_payment"
   },
 
   paymentStatus: {
     type: String,
-    enum: ["pending", "paid", "failed"],
+    enum: ["pending", "success", "failed"],
     default: "pending"
-  }
+  },
 
 }, { timestamps: true });
 
