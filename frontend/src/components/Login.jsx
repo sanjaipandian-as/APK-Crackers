@@ -1,16 +1,46 @@
 import { useState } from 'react';
 import { FaEye, FaEyeSlash, FaGoogle, FaFacebook } from 'react-icons/fa';
+import API from '../../api';
 
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle login logic here
-        console.log('Login submitted:', { email, password, rememberMe });
+        setError('');
+        setSuccess('');
+        setLoading(true);
+
+        try {
+            const response = await API.post('/customer/auth/login', {
+                email,
+                password
+            });
+
+            if (response.data.token) {
+                // Store token in localStorage
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+
+                setSuccess('Login successful! Redirecting...');
+
+                // Redirect to home after 1.5 seconds
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+            }
+        } catch (err) {
+            console.error('Login error:', err);
+            setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -127,6 +157,20 @@ const Login = () => {
                                 <p className="text-gray-600">Enter your credentials to access your account</p>
                             </div>
 
+                            {/* Error Message */}
+                            {error && (
+                                <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                                    <p className="text-sm font-medium">{error}</p>
+                                </div>
+                            )}
+
+                            {/* Success Message */}
+                            {success && (
+                                <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
+                                    <p className="text-sm font-medium">{success}</p>
+                                </div>
+                            )}
+
                             {/* Social Login Buttons */}
                             <div className="grid grid-cols-2 gap-4 mb-6">
                                 <button className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-orange-500 hover:bg-orange-50 transition-all group cursor-pointer shadow-sm hover:shadow-md">
@@ -211,9 +255,13 @@ const Login = () => {
                                 {/* Submit Button */}
                                 <button
                                     type="submit"
-                                    className="w-full py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-yellow-600 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 cursor-pointer"
+                                    disabled={loading}
+                                    className={`w-full py-3 text-white font-semibold rounded-xl transition-all shadow-lg ${loading
+                                            ? 'bg-gradient-to-r from-orange-400 to-yellow-400 cursor-not-allowed'
+                                            : 'bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 hover:shadow-xl transform hover:-translate-y-0.5 cursor-pointer'
+                                        }`}
                                 >
-                                    Sign In
+                                    {loading ? 'Signing In...' : 'Sign In'}
                                 </button>
                             </form>
 

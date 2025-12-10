@@ -1,5 +1,6 @@
 import kycRoutes from "./routes/kycRoutes.js";
 import adminKycRoutes from "./routes/adminKycRoutes.js";
+import adminAuthRoutes from "./routes/adminAuthRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import adminProductRoutes from "./routes/adminProductRoutes.js";
 import customerProductRoutes from "./routes/customerProductRoutes.js";
@@ -15,7 +16,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 
 
 
-
+app.use("/api/admin/auth", adminAuthRoutes);
 app.use("/api/admin/products", adminProductRoutes);
 app.use("/api/seller/kyc", kycRoutes);
 app.use("/api/admin/kyc", adminKycRoutes);

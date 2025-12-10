@@ -7,6 +7,7 @@ import ProductForm from '../components/ProductForm';
 import Myproducts from '../components/Myproducts';
 import KycVerify from '../components/KycVerify';
 import SellerSettings from '../components/settings';
+import SellerProfile from '../components/SellerProfile';
 
 const SellerHome = () => {
     const [activePage, setActivePage] = useState('Dashboard');
@@ -33,9 +34,11 @@ const SellerHome = () => {
             case 'Add Products':
                 return <ProductForm />;
             case 'My Products':
-                return <Myproducts />;
+                return <Myproducts onNavigate={handleNavigation} />;
             case 'KYC Verification':
                 return <KycVerify />;
+            case 'Profile':
+                return <SellerProfile />;
             case 'Settings':
                 return <SellerSettings />;
             default:

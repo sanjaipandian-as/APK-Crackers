@@ -75,3 +75,14 @@ export const rejectProduct = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+// ⭐ GET TOTAL PRODUCTS COUNT FOR ADMIN DASHBOARD
+export const getAllProductsCount = async (req, res) => {
+  try {
+    const totalProducts = await Product.countDocuments();
+    res.json({ totalProducts });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

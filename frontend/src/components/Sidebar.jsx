@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     FaInfinity,
@@ -20,6 +20,7 @@ const Sidebar = () => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [customPrice, setCustomPrice] = useState(false);
     const [priceRange, setPriceRange] = useState([0, 0]);
+    const [isSellerLoggedIn, setIsSellerLoggedIn] = useState(false);
 
     const [isEcoFriendly, setIsEcoFriendly] = useState(false);
     const [isGreenCrackers, setIsGreenCrackers] = useState(false);
@@ -34,6 +35,30 @@ const Sidebar = () => {
     const [selectedBrands, setSelectedBrands] = useState({});
     const [selectedAges, setSelectedAges] = useState({});
     const [selectedTags, setSelectedTags] = useState({});
+
+    useEffect(() => {
+        // Check if seller is logged in
+        const checkSellerLogin = () => {
+            const userRole = localStorage.getItem('userRole');
+            const token = localStorage.getItem('token');
+            setIsSellerLoggedIn(userRole === 'seller' && !!token);
+        };
+
+        checkSellerLogin();
+
+        // Listen for storage changes (in case user logs in/out in another tab)
+        window.addEventListener('storage', checkSellerLogin);
+
+        return () => window.removeEventListener('storage', checkSellerLogin);
+    }, []);
+
+    const handleBusinessAccountClick = () => {
+        if (isSellerLoggedIn) {
+            navigate('/seller-home');
+        } else {
+            navigate('/seller-login');
+        }
+    };
 
     const toggleFilter = () => {
         setIsFilterOpen(!isFilterOpen);
@@ -126,10 +151,14 @@ const Sidebar = () => {
 
                     {/* Cart Button */}
                     <div className="relative group">
-                        <button className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center hover:bg-orange-600 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer">
+                        <button
+                            onClick={() => navigate('/Cart')}
+                            className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center hover:bg-orange-600 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer">
                             <FaShoppingBag className="w-5 h-5 text-white" />
                         </button>
-                        <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                        <div
+
+                            className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                             Cart
                         </div>
                     </div>
@@ -163,13 +192,16 @@ const Sidebar = () => {
                     {/* Business Account Button */}
                     <div className="relative group">
                         <button
-                            onClick={() => navigate('/seller-login')}
-                            className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center hover:bg-orange-600 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+                            onClick={handleBusinessAccountClick}
+                            className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer ${isSellerLoggedIn
+                                    ? 'bg-green-500 hover:bg-green-600'
+                                    : 'bg-orange-500 hover:bg-orange-600'
+                                }`}
                         >
                             <FaStore className="w-5 h-5 text-white" />
                         </button>
                         <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-                            Business Account
+                            {isSellerLoggedIn ? 'Seller Dashboard' : 'Business Account'}
                         </div>
                     </div>
                 </div>

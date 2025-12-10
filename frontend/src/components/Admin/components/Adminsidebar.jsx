@@ -2,27 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     MdDashboard,
-    MdShoppingCart,
-    MdAddBox,
-    MdInventory,
     MdVerifiedUser,
+    MdInventory,
+    MdCheckCircle,
+    MdCancel,
+    MdShoppingCart,
     MdSettings,
     MdLogout,
-    MdPerson
+    MdPerson,
+    MdNotifications
 } from 'react-icons/md';
 
-const Sellersidebar = ({ onNavigate, activePage = 'Dashboard' }) => {
+const Adminsidebar = ({ onNavigate, activePage = 'Dashboard' }) => {
     const navigate = useNavigate();
-    const [sellerInfo, setSellerInfo] = useState({ name: '', email: '' });
+    const [adminInfo, setAdminInfo] = useState({ name: '', email: '' });
+    const [pendingOrders, setPendingOrders] = useState(0);
+    const [pendingKYC, setPendingKYC] = useState(0);
 
     useEffect(() => {
-        // Get seller info from localStorage
+        // Get admin info from localStorage
         const user = localStorage.getItem('user');
         if (user) {
             try {
                 const userData = JSON.parse(user);
-                setSellerInfo({
-                    name: userData.name || userData.businessName || 'Seller',
+                setAdminInfo({
+                    name: userData.name || 'Admin',
                     email: userData.email || ''
                 });
             } catch (error) {
@@ -43,7 +47,7 @@ const Sellersidebar = ({ onNavigate, activePage = 'Dashboard' }) => {
         const loginTime = localStorage.getItem('loginTime');
         const userRole = localStorage.getItem('userRole');
 
-        if (loginTime && userRole === 'seller') {
+        if (loginTime && userRole === 'admin') {
             const currentTime = new Date().getTime();
             const timeDiff = currentTime - parseInt(loginTime);
             const hoursPassed = timeDiff / (1000 * 60 * 60);
@@ -67,16 +71,25 @@ const Sellersidebar = ({ onNavigate, activePage = 'Dashboard' }) => {
             alert('Your session has expired after 24 hours. Please login again.');
         }
 
-        // Redirect to seller login
-        navigate('/seller-login');
+        // Redirect to admin login
+        navigate('/admin-login');
     };
 
     const menuItems = [
         { name: 'Dashboard', icon: MdDashboard },
-        { name: 'Orders', icon: MdShoppingCart },
-        { name: 'Add Products', icon: MdAddBox },
-        { name: 'My Products', icon: MdInventory },
-        { name: 'KYC Verification', icon: MdVerifiedUser },
+        {
+            name: 'KYC Verification',
+            icon: MdVerifiedUser,
+            badge: pendingKYC > 0 ? pendingKYC : null
+        },
+        { name: 'All Products', icon: MdInventory },
+        { name: 'Product Approval', icon: MdCheckCircle },
+        { name: 'Rejected Products', icon: MdCancel },
+        {
+            name: 'Orders',
+            icon: MdShoppingCart,
+            badge: pendingOrders > 0 ? pendingOrders : null
+        },
     ];
 
     const bottomMenuItems = [
@@ -96,17 +109,17 @@ const Sellersidebar = ({ onNavigate, activePage = 'Dashboard' }) => {
         <div className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col justify-between py-4 shadow-sm">
             {/* Profile Section */}
             <div className="px-4 mb-4">
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 shadow-lg">
+                <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 shadow-lg">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                            <MdPerson className="w-6 h-6 text-orange-600" />
+                            <MdPerson className="w-6 h-6 text-blue-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                             <h3 className="text-white font-semibold text-sm truncate">
-                                {sellerInfo.name}
+                                {adminInfo.name}
                             </h3>
-                            <p className="text-orange-100 text-xs truncate">
-                                {sellerInfo.email}
+                            <p className="text-blue-100 text-xs truncate">
+                                {adminInfo.email}
                             </p>
                         </div>
                     </div>
@@ -131,17 +144,22 @@ const Sellersidebar = ({ onNavigate, activePage = 'Dashboard' }) => {
                             onClick={() => handleItemClick(item.name)}
                             className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer
-                transition-all duration-200 ease-in-out
+                transition-all duration-200 ease-in-out relative
                 ${isActive
-                                    ? 'bg-orange-100 text-orange-600'
+                                    ? 'bg-blue-100 text-blue-600'
                                     : 'text-gray-600 hover:bg-gray-50'
                                 }
               `}
                         >
-                            <Icon className={`text-lg ${isActive ? 'text-orange-600' : 'text-gray-500'}`} />
-                            <span className={`text-sm font-medium ${isActive ? 'text-orange-600' : 'text-gray-700'}`}>
+                            <Icon className={`text-lg ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                            <span className={`text-sm font-medium flex-1 ${isActive ? 'text-blue-600' : 'text-gray-700'}`}>
                                 {item.name}
                             </span>
+                            {item.badge && (
+                                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                                    {item.badge}
+                                </span>
+                            )}
                         </div>
                     );
                 })}
@@ -161,15 +179,15 @@ const Sellersidebar = ({ onNavigate, activePage = 'Dashboard' }) => {
                 flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer
                 transition-all duration-200 ease-in-out
                 ${isActive
-                                    ? 'bg-orange-100 text-orange-600'
+                                    ? 'bg-blue-100 text-blue-600'
                                     : item.name === 'Logout'
                                         ? 'text-red-600 hover:bg-red-50'
                                         : 'text-gray-600 hover:bg-gray-50'
                                 }
               `}
                         >
-                            <Icon className={`text-lg ${isActive ? 'text-orange-600' : item.name === 'Logout' ? 'text-red-600' : 'text-gray-500'}`} />
-                            <span className={`text-sm font-medium ${isActive ? 'text-orange-600' : item.name === 'Logout' ? 'text-red-600' : 'text-gray-700'}`}>
+                            <Icon className={`text-lg ${isActive ? 'text-blue-600' : item.name === 'Logout' ? 'text-red-600' : 'text-gray-500'}`} />
+                            <span className={`text-sm font-medium ${isActive ? 'text-blue-600' : item.name === 'Logout' ? 'text-red-600' : 'text-gray-700'}`}>
                                 {item.name}
                             </span>
                         </div>
@@ -180,4 +198,4 @@ const Sellersidebar = ({ onNavigate, activePage = 'Dashboard' }) => {
     );
 };
 
-export default Sellersidebar;
+export default Adminsidebar;

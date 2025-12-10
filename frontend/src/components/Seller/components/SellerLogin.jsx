@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MdEmail, MdLock, MdVisibility, MdVisibilityOff, MdStore } from 'react-icons/md';
 import { FaInfinity } from 'react-icons/fa';
+import API from '../../../../api';
 
 const SellerLogin = () => {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -17,14 +20,45 @@ const SellerLogin = () => {
             ...prev,
             [name]: value
         }));
+        if (error) setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Login data:', formData);
-        // Handle login logic here
-        // On successful login, navigate to seller home
-        navigate('/seller-home');
+        setError('');
+        setLoading(true);
+
+        try {
+            const response = await API.post('/seller/auth/login', {
+                email: formData.email,
+                password: formData.password
+            });
+
+            if (response.data.token) {
+                // Store token and user data in localStorage
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.seller));
+                localStorage.setItem('userRole', 'seller');
+
+                // Store login timestamp for 24-hour auto-logout
+                const loginTime = new Date().getTime();
+                localStorage.setItem('loginTime', loginTime.toString());
+
+                // Navigate to seller dashboard
+                navigate('/seller-home');
+            }
+        } catch (err) {
+            console.error('Login error:', err);
+            if (err.response?.status === 404) {
+                setError('Seller account not found. Please check your email.');
+            } else if (err.response?.status === 400) {
+                setError('Invalid password. Please try again.');
+            } else {
+                setError(err.response?.data?.message || 'Login failed. Please try again.');
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleRegisterClick = () => {
@@ -45,6 +79,13 @@ const SellerLogin = () => {
 
                 {/* Login Card */}
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+                    {/* Error Message */}
+                    {error && (
+                        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                            <p className="text-sm font-medium">{error}</p>
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Email Field */}
                         <div>
@@ -115,9 +156,13 @@ const SellerLogin = () => {
                         {/* Login Button */}
                         <button
                             type="submit"
-                            className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40"
+                            disabled={loading}
+                            className={`w-full py-3 text-white font-bold rounded-xl transition-all shadow-lg ${loading
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40'
+                                }`}
                         >
-                            Sign In
+                            {loading ? 'Signing In...' : 'Sign In'}
                         </button>
                     </form>
 

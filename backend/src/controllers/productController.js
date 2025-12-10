@@ -29,3 +29,16 @@ export const addProduct = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const getSellerProducts = async (req, res) => {
+  try {
+    const sellerId = req.user._id;
+
+    const products = await Product.find({ sellerId }).sort({ createdAt: -1 });
+
+    res.json(products);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

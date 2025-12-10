@@ -1,27 +1,32 @@
 import React, { useState } from 'react';
-import { MdUploadFile, MdClose, MdCheckCircle, MdVolumeUp } from 'react-icons/md';
-import { FaStar, FaBolt } from 'react-icons/fa';
-import { GiThunderStruck } from 'react-icons/gi';
+import { MdUploadFile, MdClose, MdCheckCircle, MdImage } from 'react-icons/md';
+import API from '../../../../api';
 
 const ProductForm = () => {
     const [formData, setFormData] = useState({
-        productName: '',
-        price: '',
-        age: '',
-        rating: '',
+        name: '',
         description: '',
-        tags: [],
-        soundTags: [], // sound, thunder, blast
-        image: null
+        price: '',
+        category: '',
+        stock: ''
     });
 
-    const [imagePreview, setImagePreview] = useState(null);
+    const [images, setImages] = useState([]);
+    const [imagePreviews, setImagePreviews] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
-    const tagOptions = ['Eco-Friendly', 'Green Crackers', 'Premium', 'Best Seller', 'New Arrival', 'Limited Edition'];
-    const soundTagOptions = [
-        { name: 'Sound', icon: MdVolumeUp },
-        { name: 'Thunder', icon: GiThunderStruck },
-        { name: 'Blast', icon: FaBolt }
+    const categoryOptions = [
+        'Sparklers',
+        'Ground Spinners',
+        'Aerial Fireworks',
+        'Rockets',
+        'Fountains',
+        'Crackers',
+        'Novelties',
+        'Gift Boxes',
+        'Others'
     ];
 
     const handleInputChange = (e) => {
@@ -30,56 +35,118 @@ const ProductForm = () => {
             ...prev,
             [name]: value
         }));
+        if (error) setError('');
     };
 
     const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setFormData(prev => ({ ...prev, image: file }));
+        const files = Array.from(e.target.files);
+
+        // Limit to 5 images
+        if (images.length + files.length > 5) {
+            setError('You can upload maximum 5 images');
+            return;
+        }
+
+        // Validate file size (5MB max per file)
+        const invalidFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+        if (invalidFiles.length > 0) {
+            setError('Each image must be less than 5MB');
+            return;
+        }
+
+        setImages(prev => [...prev, ...files]);
+
+        // Create previews
+        files.forEach(file => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreview(reader.result);
+                setImagePreviews(prev => [...prev, reader.result]);
             };
             reader.readAsDataURL(file);
-        }
+        });
     };
 
-    const handleTagToggle = (tag) => {
-        setFormData(prev => ({
-            ...prev,
-            tags: prev.tags.includes(tag)
-                ? prev.tags.filter(t => t !== tag)
-                : [...prev.tags, tag]
-        }));
+    const removeImage = (index) => {
+        setImages(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleSoundTagToggle = (tag) => {
-        setFormData(prev => ({
-            ...prev,
-            soundTags: prev.soundTags.includes(tag)
-                ? prev.soundTags.filter(t => t !== tag)
-                : [...prev.soundTags, tag]
-        }));
-    };
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Form Data:', formData);
-        // Handle form submission here
+        setError('');
+        setSuccess('');
+
+        // Validation
+        if (images.length === 0) {
+            setError('Please upload at least one product image');
+            return;
+        }
+
+        if (parseFloat(formData.price) <= 0) {
+            setError('Price must be greater than 0');
+            return;
+        }
+
+        if (parseInt(formData.stock) < 0) {
+            setError('Stock cannot be negative');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            // Create FormData for multipart/form-data
+            const submitData = new FormData();
+            submitData.append('name', formData.name);
+            submitData.append('description', formData.description);
+            submitData.append('price', formData.price);
+            submitData.append('category', formData.category);
+            submitData.append('stock', formData.stock);
+
+            // Append all images
+            images.forEach((image) => {
+                submitData.append('images', image);
+            });
+
+            const response = await API.post('/products/add', submitData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            setSuccess('Product submitted successfully! It will be available after admin approval.');
+
+            // Reset form
+            setFormData({
+                name: '',
+                description: '',
+                price: '',
+                category: '',
+                stock: ''
+            });
+            setImages([]);
+            setImagePreviews([]);
+
+        } catch (err) {
+            console.error('Product submission error:', err);
+            setError(err.response?.data?.message || 'Failed to submit product. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleCancel = () => {
         setFormData({
-            productName: '',
-            price: '',
-            age: '',
-            rating: '',
+            name: '',
             description: '',
-            tags: [],
-            soundTags: [],
-            image: null
+            price: '',
+            category: '',
+            stock: ''
         });
-        setImagePreview(null);
+        setImages([]);
+        setImagePreviews([]);
+        setError('');
+        setSuccess('');
     };
 
     return (
@@ -90,87 +157,95 @@ const ProductForm = () => {
                 <p className="text-sm text-gray-500 mt-1">Fill in the details to add a new product to your store</p>
             </div>
 
+            {/* Success/Error Messages */}
+            {success && (
+                <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                    <p className="text-sm font-medium">{success}</p>
+                </div>
+            )}
+
+            {error && (
+                <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    <p className="text-sm font-medium">{error}</p>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Column - Product Image */}
+                    {/* Left Column - Product Images */}
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-6">
-                            <h2 className="text-lg font-bold text-gray-900 mb-4">Product Image</h2>
+                            <h2 className="text-lg font-bold text-gray-900 mb-4">Product Images</h2>
 
                             {/* Image Upload */}
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Upload Image <span className="text-red-500">*</span>
+                                    Upload Images (Max 5) <span className="text-red-500">*</span>
                                 </label>
 
-                                {!imagePreview ? (
-                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-500 transition-colors cursor-pointer">
+                                {imagePreviews.length < 5 && (
+                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-500 transition-colors cursor-pointer mb-4">
                                         <input
                                             type="file"
                                             accept="image/*"
+                                            multiple
                                             onChange={handleImageUpload}
                                             className="hidden"
                                             id="image-upload"
                                         />
                                         <label htmlFor="image-upload" className="cursor-pointer">
                                             <MdUploadFile className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                                            <p className="text-sm text-gray-600 mb-1">Click to upload product image</p>
-                                            <p className="text-xs text-gray-400">PNG, JPG up to 5MB</p>
+                                            <p className="text-sm text-gray-600 mb-1">Click to upload images</p>
+                                            <p className="text-xs text-gray-400">PNG, JPG up to 5MB each</p>
+                                            <p className="text-xs text-orange-600 mt-1">{imagePreviews.length}/5 uploaded</p>
                                         </label>
                                     </div>
-                                ) : (
-                                    <div className="relative">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Product preview"
-                                            className="w-full h-64 object-cover rounded-lg"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setImagePreview(null);
-                                                setFormData(prev => ({ ...prev, image: null }));
-                                            }}
-                                            className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                                        >
-                                            <MdClose className="w-4 h-4" />
-                                        </button>
-                                        <div className="absolute bottom-2 right-2 p-2 bg-green-500 text-white rounded-full">
-                                            <MdCheckCircle className="w-4 h-4" />
-                                        </div>
+                                )}
+
+                                {/* Image Previews Grid */}
+                                {imagePreviews.length > 0 && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {imagePreviews.map((preview, index) => (
+                                            <div key={index} className="relative group">
+                                                <img
+                                                    src={preview}
+                                                    alt={`Preview ${index + 1}`}
+                                                    className="w-full h-32 object-cover rounded-lg"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImage(index)}
+                                                    className="absolute top-1 right-1 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                                >
+                                                    <MdClose className="w-3 h-3" />
+                                                </button>
+                                                {index === 0 && (
+                                                    <div className="absolute bottom-1 left-1 px-2 py-0.5 bg-orange-500 text-white text-xs rounded">
+                                                        Primary
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
 
                             {/* Preview Card */}
-                            {imagePreview && formData.productName && (
+                            {imagePreviews.length > 0 && formData.name && (
                                 <div className="mt-6 pt-6 border-t border-gray-200">
                                     <h3 className="text-sm font-semibold text-gray-700 mb-3">Preview</h3>
                                     <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
                                         <img
-                                            src={imagePreview}
+                                            src={imagePreviews[0]}
                                             alt="Preview"
                                             className="w-full h-48 object-cover"
                                         />
                                         <div className="p-4">
-                                            <h4 className="font-bold text-gray-900 mb-2">{formData.productName}</h4>
-                                            <div className="flex items-center justify-between text-sm mb-3">
-                                                <span className="text-gray-600">AGE</span>
-                                                <span className="text-gray-600">Tags</span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm mb-3">
-                                                <span className="font-semibold text-gray-900">{formData.age || '16'}+</span>
-                                                <div className="flex gap-1">
-                                                    {formData.soundTags.slice(0, 3).map((tag, idx) => (
-                                                        <div key={idx} className="w-6 h-6 bg-gray-800 rounded-full"></div>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                            <h4 className="font-bold text-gray-900 mb-2">{formData.name}</h4>
+                                            <p className="text-xs text-gray-500 mb-3 line-clamp-2">{formData.description}</p>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xl font-bold text-gray-900">₹{formData.price || '499'}.00</span>
-                                                <button type="button" className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-semibold">
-                                                    Buy now
-                                                </button>
+                                                <span className="text-xl font-bold text-gray-900">₹{formData.price || '0'}</span>
+                                                <span className="text-sm text-gray-600">Stock: {formData.stock || '0'}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -193,13 +268,32 @@ const ProductForm = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        name="productName"
-                                        value={formData.productName}
+                                        name="name"
+                                        value={formData.name}
                                         onChange={handleInputChange}
-                                        placeholder="e.g., Example Cracker"
+                                        placeholder="e.g., Premium Sparkler Pack"
                                         className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all"
                                         required
                                     />
+                                </div>
+
+                                {/* Category */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Category <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all"
+                                        required
+                                    >
+                                        <option value="">Select category</option>
+                                        {categoryOptions.map((cat) => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 {/* Price */}
@@ -214,33 +308,31 @@ const ProductForm = () => {
                                         onChange={handleInputChange}
                                         placeholder="499.00"
                                         step="0.01"
+                                        min="0"
                                         className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all"
                                         required
                                     />
                                 </div>
 
-                                {/* Age Restriction */}
-                                <div>
+                                {/* Stock */}
+                                <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Age Restriction <span className="text-red-500">*</span>
+                                        Stock Quantity <span className="text-red-500">*</span>
                                     </label>
-                                    <select
-                                        name="age"
-                                        value={formData.age}
+                                    <input
+                                        type="number"
+                                        name="stock"
+                                        value={formData.stock}
                                         onChange={handleInputChange}
+                                        placeholder="100"
+                                        min="0"
                                         className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all"
                                         required
-                                    >
-                                        <option value="">Select age</option>
-                                        <option value="12">12+</option>
-                                        <option value="14">14+</option>
-                                        <option value="16">16+</option>
-                                        <option value="18">18+</option>
-                                    </select>
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Number of units available for sale
+                                    </p>
                                 </div>
-
-                                {/* Rating */}
-                                
                             </div>
                         </div>
 
@@ -256,7 +348,7 @@ const ProductForm = () => {
                                     name="description"
                                     value={formData.description}
                                     onChange={handleInputChange}
-                                    placeholder="Enter detailed product description..."
+                                    placeholder="Enter detailed product description including features, specifications, and safety instructions..."
                                     rows="6"
                                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all resize-none"
                                     required
@@ -267,69 +359,11 @@ const ProductForm = () => {
                             </div>
                         </div>
 
-                        {/* Sound Tags - NEW */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h2 className="text-lg font-bold text-gray-900 mb-4">Sound Tags</h2>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-3">
-                                    Select Sound Type(s)
-                                </label>
-                                <div className="flex flex-wrap gap-3">
-                                    {soundTagOptions.map((tag) => {
-                                        const Icon = tag.icon;
-                                        return (
-                                            <button
-                                                key={tag.name}
-                                                type="button"
-                                                onClick={() => handleSoundTagToggle(tag.name)}
-                                                className={`px-5 py-3 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${formData.soundTags.includes(tag.name)
-                                                        ? 'bg-orange-500 text-white shadow-md'
-                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                    }`}
-                                            >
-                                                <Icon className="w-5 h-5" />
-                                                {tag.name}
-                                                {formData.soundTags.includes(tag.name) && <MdCheckCircle className="w-4 h-4" />}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    Selected: {formData.soundTags.length}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Category Tags */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h2 className="text-lg font-bold text-gray-900 mb-4">Category Tags</h2>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-3">
-                                    Select Tags (Select up to 3)
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                    {tagOptions.map((tag) => (
-                                        <button
-                                            key={tag}
-                                            type="button"
-                                            onClick={() => handleTagToggle(tag)}
-                                            disabled={!formData.tags.includes(tag) && formData.tags.length >= 3}
-                                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${formData.tags.includes(tag)
-                                                    ? 'bg-orange-500 text-white shadow-md'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed'
-                                                }`}
-                                        >
-                                            {formData.tags.includes(tag) && <MdCheckCircle className="inline w-4 h-4 mr-1" />}
-                                            {tag}
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    Selected: {formData.tags.length}/3
-                                </p>
-                            </div>
+                        {/* Info Box */}
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                            <p className="text-sm text-orange-800">
+                                <strong>Note:</strong> Your product will be submitted for admin approval. Once approved, it will be visible to customers on the platform.
+                            </p>
                         </div>
 
                         {/* Action Buttons */}
@@ -338,15 +372,30 @@ const ProductForm = () => {
                                 <button
                                     type="button"
                                     onClick={handleCancel}
-                                    className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all"
+                                    disabled={loading}
+                                    className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40"
+                                    disabled={loading}
+                                    className={`px-6 py-3 text-white font-semibold rounded-lg transition-all shadow-lg flex items-center gap-2 ${loading
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40'
+                                        }`}
                                 >
-                                    Add Product
+                                    {loading ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                            Submitting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <MdCheckCircle className="w-5 h-5" />
+                                            Submit Product
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

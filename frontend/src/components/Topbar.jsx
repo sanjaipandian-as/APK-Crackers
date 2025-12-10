@@ -1,10 +1,38 @@
-import { useState } from 'react';
-import { FaSearch, FaBell, FaUser } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { FaSearch, FaBell, FaUser, FaSignOutAlt } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const Searchbar = () => {
     const [searchQuery, setSearchQuery] = useState('');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userName, setUserName] = useState('');
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Check if user is logged in
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+
+        if (token && user) {
+            setIsLoggedIn(true);
+            try {
+                const userData = JSON.parse(user);
+                setUserName(userData.name || 'User');
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+            }
+        }
+    }, []);
+
+    const handleLogout = () => {
+        // Clear authentication data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setIsLoggedIn(false);
+        setUserName('');
+        // Redirect to home page
+        navigate('/');
+    };
 
     return (
         <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
@@ -31,20 +59,42 @@ const Searchbar = () => {
                         <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
                     </button>
 
-                    {/* Login Button */}
-                    <button
-                        onClick={() => navigate('/Login')}
-                        className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-full hover:border-orange-500 hover:text-orange-500 hover:bg-orange-50 transition-all cursor-pointer shadow-sm hover:shadow"
-                    >
-                        Login
-                    </button>
+                    {/* Conditional Rendering based on Login Status */}
+                    {!isLoggedIn ? (
+                        <>
+                            {/* Login Button */}
+                            <button
+                                onClick={() => navigate('/Login')}
+                                className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-full hover:border-orange-500 hover:text-orange-500 hover:bg-orange-50 transition-all cursor-pointer shadow-sm hover:shadow"
+                            >
+                                Login
+                            </button>
 
-                    {/* Signup Button */}
-                    <button
-                        onClick={() => navigate('/Register')}
-                        className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full hover:from-orange-600 hover:to-yellow-600 transition-all shadow-md hover:shadow-lg cursor-pointer transform hover:scale-105">
-                        Sign Up
-                    </button>
+                            {/* Signup Button */}
+                            <button
+                                onClick={() => navigate('/Register')}
+                                className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full hover:from-orange-600 hover:to-yellow-600 transition-all shadow-md hover:shadow-lg cursor-pointer transform hover:scale-105"
+                            >
+                                Sign Up
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            {/* User Name Display */}
+                            <span className="text-sm font-medium text-gray-700 px-3">
+                                Welcome, <span className="text-orange-600 font-semibold">{userName}</span>
+                            </span>
+
+                            {/* Logout Button */}
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-full hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg cursor-pointer transform hover:scale-105"
+                            >
+                                <FaSignOutAlt className="w-4 h-4" />
+                                Logout
+                            </button>
+                        </>
+                    )}
 
                     {/* Profile Picture */}
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-orange-500 hover:ring-offset-2 transition-all shadow-md hover:shadow-lg transform hover:scale-105">

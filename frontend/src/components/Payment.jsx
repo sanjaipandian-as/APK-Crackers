@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaCreditCard, FaMoneyBillWave, FaLock, FaCheckCircle, FaArrowLeft } from 'react-icons/fa';
+import { FaCreditCard, FaMoneyBillWave, FaLock, FaCheckCircle, FaArrowLeft, FaExclamationCircle } from 'react-icons/fa';
 import { MdAccountBalanceWallet } from 'react-icons/md';
 import { SiVisa, SiMastercard, SiAmericanexpress, SiPaytm, SiGooglepay, SiPhonepe } from 'react-icons/si';
+import API from '../../api';
 
 const Payment = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { product, quantity } = location.state || {};
+    const { shippingAddress } = location.state || {};
 
     const [selectedMethod, setSelectedMethod] = useState('cod');
     const [cardDetails, setCardDetails] = useState({
@@ -18,12 +19,38 @@ const Payment = () => {
     });
     const [upiId, setUpiId] = useState('');
     const [selectedWallet, setSelectedWallet] = useState('');
+    const [order, setOrder] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [processing, setProcessing] = useState(false);
 
-    // Calculate totals
-    const subtotal = product ? product.price * quantity : 0;
-    const shipping = 0; // Free shipping
-    const tax = subtotal * 0.18; // 18% GST
-    const total = subtotal + shipping + tax;
+    useEffect(() => {
+        createOrder();
+    }, []);
+
+    const createOrder = async () => {
+        try {
+            setLoading(true);
+            const response = await API.post('/orders/create', { shippingAddress });
+            setOrder(response.data.order);
+            setError('');
+        } catch (error) {
+            console.error('Error creating order:', error);
+            setError(error.response?.data?.message || 'Failed to create order. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadRazorpayScript = () => {
+        return new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+    };
 
     const handleCardInputChange = (e) => {
         const { name, value } = e.target;
@@ -45,16 +72,121 @@ const Payment = () => {
         setCardDetails({ ...cardDetails, [name]: formattedValue });
     };
 
-    const handlePayment = () => {
-        alert(`Payment of ₹${total.toFixed(2)} processed successfully via ${selectedMethod.toUpperCase()}!`);
-        navigate('/');
+    const handleRazorpayPayment = async () => {
+        try {
+            setProcessing(true);
+
+            // Load Razorpay script
+            const scriptLoaded = await loadRazorpayScript();
+            if (!scriptLoaded) {
+                alert('Failed to load Razorpay. Please check your internet connection.');
+                setProcessing(false);
+                return;
+            }
+
+            // Create Razorpay order
+            const { data } = await API.post('/payment/order', { orderId: order._id });
+
+            const options = {
+                key: data.razorpayKey,
+                amount: data.paymentOrder.amount,
+                currency: data.paymentOrder.currency,
+                name: 'APK Crackers',
+                description: 'Order Payment',
+                order_id: data.paymentOrder.id,
+                handler: async function (response) {
+                    try {
+                        // Verify payment
+                        await API.post('/payment/verify', {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            orderId: order._id
+                        });
+
+                        alert('Payment successful!');
+                        navigate('/');
+                    } catch (error) {
+                        console.error('Payment verification failed:', error);
+                        alert('Payment verification failed. Please contact support.');
+                    }
+                },
+                prefill: {
+                    name: '',
+                    email: '',
+                    contact: ''
+                },
+                theme: {
+                    color: '#f97316'
+                },
+                modal: {
+                    ondismiss: async function () {
+                        try {
+                            await API.post('/payment/failed', { orderId: order._id });
+                        } catch (error) {
+                            console.error('Failed to update payment status:', error);
+                        }
+                        setProcessing(false);
+                    }
+                }
+            };
+
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.open();
+
+        } catch (error) {
+            console.error('Payment error:', error);
+            alert('Failed to initiate payment. Please try again.');
+            setProcessing(false);
+        }
     };
 
-    if (!product) {
+    const handleCODPayment = async () => {
+        try {
+            setProcessing(true);
+            // For COD, order is already created with status "pending_payment"
+            // Just navigate to success page
+            alert('Order placed successfully! You can pay on delivery.');
+            navigate('/');
+        } catch (error) {
+            console.error('COD order error:', error);
+            alert('Failed to place order. Please try again.');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handlePayment = () => {
+        if (selectedMethod === 'cod') {
+            handleCODPayment();
+        } else {
+            handleRazorpayPayment();
+        }
+    };
+
+    // Calculate totals from order
+    const subtotal = order ? order.totalAmount : 0;
+    const shipping = 0; // Free shipping
+    const tax = subtotal * 0.18; // 18% GST (already included in totalAmount)
+    const total = order ? order.totalAmount : 0;
+
+    if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-gray-600 mb-4">No product selected</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Creating your order...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !order) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <FaExclamationCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-4">{error || 'No order found'}</p>
                     <button
                         onClick={() => navigate('/')}
                         className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
@@ -76,7 +208,7 @@ const Payment = () => {
                         className="flex items-center gap-2 text-gray-600 hover:text-orange-600 font-medium"
                     >
                         <FaArrowLeft className="w-4 h-4" />
-                        Back to Product
+                        Back
                     </button>
                 </div>
             </div>
@@ -104,8 +236,8 @@ const Payment = () => {
                                 <div
                                     onClick={() => setSelectedMethod('cod')}
                                     className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${selectedMethod === 'cod'
-                                            ? 'border-orange-500 bg-orange-50'
-                                            : 'border-gray-200 hover:border-gray-300'
+                                        ? 'border-orange-500 bg-orange-50'
+                                        : 'border-gray-200 hover:border-gray-300'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between">
@@ -129,8 +261,8 @@ const Payment = () => {
                                 <div
                                     onClick={() => setSelectedMethod('online')}
                                     className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${selectedMethod === 'online'
-                                            ? 'border-orange-500 bg-orange-50'
-                                            : 'border-gray-200 hover:border-gray-300'
+                                        ? 'border-orange-500 bg-orange-50'
+                                        : 'border-gray-200 hover:border-gray-300'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between mb-3">
@@ -161,8 +293,8 @@ const Payment = () => {
                                                             setSelectedWallet('googlepay');
                                                         }}
                                                         className={`p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all ${selectedWallet === 'googlepay'
-                                                                ? 'border-orange-500 bg-orange-50'
-                                                                : 'border-gray-200 hover:border-gray-300'
+                                                            ? 'border-orange-500 bg-orange-50'
+                                                            : 'border-gray-200 hover:border-gray-300'
                                                             }`}
                                                     >
                                                         <SiGooglepay className="w-8 h-8 text-blue-600" />
@@ -174,8 +306,8 @@ const Payment = () => {
                                                             setSelectedWallet('phonepe');
                                                         }}
                                                         className={`p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all ${selectedWallet === 'phonepe'
-                                                                ? 'border-orange-500 bg-orange-50'
-                                                                : 'border-gray-200 hover:border-gray-300'
+                                                            ? 'border-orange-500 bg-orange-50'
+                                                            : 'border-gray-200 hover:border-gray-300'
                                                             }`}
                                                     >
                                                         <SiPhonepe className="w-8 h-8 text-purple-600" />
@@ -187,8 +319,8 @@ const Payment = () => {
                                                             setSelectedWallet('paytm');
                                                         }}
                                                         className={`p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all ${selectedWallet === 'paytm'
-                                                                ? 'border-orange-500 bg-orange-50'
-                                                                : 'border-gray-200 hover:border-gray-300'
+                                                            ? 'border-orange-500 bg-orange-50'
+                                                            : 'border-gray-200 hover:border-gray-300'
                                                             }`}
                                                     >
                                                         <SiPaytm className="w-8 h-8 text-blue-700" />
@@ -218,8 +350,8 @@ const Payment = () => {
                                 <div
                                     onClick={() => setSelectedMethod('card')}
                                     className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${selectedMethod === 'card'
-                                            ? 'border-orange-500 bg-orange-50'
-                                            : 'border-gray-200 hover:border-gray-300'
+                                        ? 'border-orange-500 bg-orange-50'
+                                        : 'border-gray-200 hover:border-gray-300'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between mb-3">
@@ -339,19 +471,19 @@ const Payment = () => {
                         <div className="p-6 sticky top-0">
                             <h2 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
 
-                            {/* Product Details */}
+                            {/* Order Items */}
                             <div className="mb-6 pb-6 border-b border-gray-200">
-                                <div className="flex gap-4">
-                                    <img
-                                        src={product.images[0]}
-                                        alt={product.name}
-                                        className="w-20 h-20 object-cover rounded-lg border border-gray-200"
-                                    />
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-gray-900 text-sm mb-1">{product.name}</h3>
-                                        <p className="text-sm text-gray-600">Quantity: {quantity}</p>
-                                        <p className="text-sm font-bold text-gray-900 mt-1">₹{product.price.toFixed(2)}</p>
-                                    </div>
+                                <p className="text-sm text-gray-600 mb-3">{order.items?.length || 0} item(s) in your order</p>
+                                <div className="space-y-3">
+                                    {order.items?.map((item, index) => (
+                                        <div key={index} className="flex gap-3 text-sm">
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-gray-900">Product #{index + 1}</p>
+                                                <p className="text-gray-600">Quantity: {item.quantity}</p>
+                                            </div>
+                                            <p className="font-bold text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</p>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
@@ -359,15 +491,15 @@ const Payment = () => {
                             <div className="space-y-3 mb-6 pb-6 border-b border-gray-200">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Subtotal</span>
-                                    <span className="font-semibold text-gray-900">₹{subtotal.toFixed(2)}</span>
+                                    <span className="font-semibold text-gray-900">₹{total.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Shipping</span>
                                     <span className="font-semibold text-green-600">FREE</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Tax (GST 18%)</span>
-                                    <span className="font-semibold text-gray-900">₹{tax.toFixed(2)}</span>
+                                    <span className="text-gray-600">Tax (Included)</span>
+                                    <span className="font-semibold text-gray-900">Included</span>
                                 </div>
                             </div>
 
@@ -380,10 +512,21 @@ const Payment = () => {
                             {/* Pay Button */}
                             <button
                                 onClick={handlePayment}
-                                className="w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-lg rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 flex items-center justify-center gap-2"
+                                disabled={processing}
+                                className={`w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-lg rounded-xl transition-all shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 flex items-center justify-center gap-2 ${processing ? 'opacity-50 cursor-not-allowed' : 'hover:from-orange-600 hover:to-orange-700'
+                                    }`}
                             >
-                                <FaCheckCircle className="w-5 h-5" />
-                                Complete Payment
+                                {processing ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                        Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FaCheckCircle className="w-5 h-5" />
+                                        Complete Payment
+                                    </>
+                                )}
                             </button>
 
                             {/* Trust Indicators */}

@@ -1,83 +1,76 @@
-import React, { useState } from 'react';
-import { MdEdit, MdDelete, MdSearch, MdFilterList } from 'react-icons/md';
-import { FaStar, FaShoppingCart } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { MdEdit, MdDelete, MdSearch, MdFilterList, MdInventory } from 'react-icons/md';
+import API from '../../../../api';
 
-const Myproducts = () => {
+const Myproducts = ({ onNavigate }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('All');
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    // Sample products data
-    const products = [
-        {
-            id: 1,
-            name: 'Exaple Cracker',
-            image: 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000',
-            rating: 4.2,
-            reviews: 902,
-            age: '16+',
-            tags: ['sound', 'thunder', 'blast'],
-            price: 499.00,
-            category: 'Crackers'
-        },
-        {
-            id: 2,
-            name: 'Exaple Cracker',
-            image: 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000',
-            rating: 4.2,
-            reviews: 902,
-            age: '16+',
-            tags: ['sound', 'thunder', 'blast'],
-            price: 499.00,
-            category: 'Crackers'
-        },
-        {
-            id: 3,
-            name: 'Exaple Cracker',
-            image: 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000',
-            rating: 4.2,
-            reviews: 902,
-            age: '16+',
-            tags: ['sound', 'thunder', 'blast'],
-            price: 499.00,
-            category: 'Crackers'
-        },
-        {
-            id: 4,
-            name: 'Exaple Cracker',
-            image: 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000',
-            rating: 4.2,
-            reviews: 902,
-            age: '16+',
-            tags: ['sound', 'thunder', 'blast'],
-            price: 499.00,
-            category: 'Crackers'
-        },
-        {
-            id: 5,
-            name: 'Exaple Cracker',
-            image: 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000',
-            rating: 4.2,
-            reviews: 902,
-            age: '16+',
-            tags: ['sound', 'thunder', 'blast'],
-            price: 499.00,
-            category: 'Crackers'
-        },
-        {
-            id: 6,
-            name: 'Exaple Cracker',
-            image: 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000',
-            rating: 4.2,
-            reviews: 902,
-            age: '16+',
-            tags: ['sound', 'thunder', 'blast'],
-            price: 499.00,
-            category: 'Crackers'
-        },
+    const categoryOptions = [
+        'All',
+        'Sparklers',
+        'Ground Spinners',
+        'Aerial Fireworks',
+        'Rockets',
+        'Fountains',
+        'Crackers',
+        'Novelties',
+        'Gift Boxes',
+        'Others'
     ];
 
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const fetchProducts = async () => {
+        try {
+            const response = await API.get('/products/my-products');
+            setProducts(response.data);
+            setLoading(false);
+        } catch (err) {
+            console.error('Error fetching products:', err);
+            setError('Failed to load products');
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteProduct = async (productId) => {
+        if (!window.confirm('Are you sure you want to delete this product?')) {
+            return;
+        }
+
+        try {
+            // TODO: Implement delete endpoint
+            // await API.delete(`/products/${productId}`);
+            // setProducts(products.filter(p => p._id !== productId));
+            alert('Delete functionality will be implemented soon');
+        } catch (err) {
+            console.error('Error deleting product:', err);
+            alert('Failed to delete product');
+        }
+    };
+
+    const getStatusBadge = (status) => {
+        const statusConfig = {
+            'pending': { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending Approval' },
+            'approved': { bg: 'bg-green-100', text: 'text-green-700', label: 'Approved' },
+            'rejected': { bg: 'bg-red-100', text: 'text-red-700', label: 'Rejected' }
+        };
+
+        const config = statusConfig[status] || statusConfig['pending'];
+        return (
+            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.text}`}>
+                {config.label}
+            </span>
+        );
+    };
+
     const filteredProducts = products.filter(product => {
-        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = product.name?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = filterCategory === 'All' || product.category === filterCategory;
         return matchesSearch && matchesCategory;
     });
@@ -105,7 +98,7 @@ const Myproducts = () => {
                         />
                     </div>
 
-                    {/* Filter and Add Button */}
+                    {/* Filter and Refresh Button */}
                     <div className="flex items-center gap-3">
                         <div className="relative">
                             <MdFilterList className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -114,15 +107,17 @@ const Myproducts = () => {
                                 onChange={(e) => setFilterCategory(e.target.value)}
                                 className="pl-10 pr-8 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all appearance-none bg-white"
                             >
-                                <option value="All">All Categories</option>
-                                <option value="Crackers">Crackers</option>
-                                <option value="Sparklers">Sparklers</option>
-                                <option value="Rockets">Rockets</option>
+                                {categoryOptions.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
                             </select>
                         </div>
 
-                        <button className="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30">
-                            + Add Product
+                        <button
+                            onClick={fetchProducts}
+                            className="px-4 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all"
+                        >
+                            Refresh
                         </button>
                     </div>
                 </div>
@@ -135,81 +130,115 @@ const Myproducts = () => {
                 </div>
             </div>
 
-            {/* Products Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredProducts.map((product) => (
-                    <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group">
-                        {/* Product Image */}
-                        <div className="relative overflow-hidden">
-                            <img
-                                src={product.image}
-                                alt={product.name}
-                                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                            {/* Edit/Delete Overlay */}
-                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="p-2 bg-white rounded-lg shadow-md hover:bg-orange-500 hover:text-white transition-colors">
-                                    <MdEdit className="w-4 h-4" />
-                                </button>
-                                <button className="p-2 bg-white rounded-lg shadow-md hover:bg-red-500 hover:text-white transition-colors">
-                                    <MdDelete className="w-4 h-4" />
-                                </button>
-                            </div>
+            {/* Loading State */}
+            {loading ? (
+                <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
+                    <p className="text-gray-500">Loading products...</p>
+                </div>
+            ) : error ? (
+                <div className="text-center py-12">
+                    <p className="text-red-600">{error}</p>
+                </div>
+            ) : filteredProducts.length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12">
+                    <div className="text-center max-w-md mx-auto">
+                        <div className="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <MdInventory className="w-12 h-12 text-orange-500" />
                         </div>
-
-                        {/* Product Details */}
-                        <div className="p-4">
-                            {/* Product Name and Rating */}
-                            <div className="flex items-start justify-between mb-3">
-                                <h3 className="font-bold text-gray-900 text-sm">{product.name}</h3>
-                                <div className="flex items-center gap-1 text-xs">
-                                    <FaStar className="w-3 h-3 text-yellow-500" />
-                                    <span className="font-semibold text-gray-900">{product.rating}</span>
-                                    <span className="text-gray-500">({product.reviews})</span>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                            {products.length === 0 ? 'No Products Added Yet' : 'No Products Found'}
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                            {products.length === 0
+                                ? 'You haven\'t added any products to your store yet. Start by adding your first product to begin selling!'
+                                : 'Try adjusting your search or filter criteria to find the products you\'re looking for.'}
+                        </p>
+                        {products.length === 0 && (
+                            <button
+                                onClick={() => onNavigate && onNavigate('Add Products')}
+                                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 inline-flex items-center gap-2"
+                            >
+                                <MdInventory className="w-5 h-5" />
+                                Add Your First Product
+                            </button>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                /* Products Grid */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredProducts.map((product) => (
+                        <div key={product._id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group">
+                            {/* Product Image */}
+                            <div className="relative overflow-hidden">
+                                <img
+                                    src={product.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
+                                    alt={product.name}
+                                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                                {/* Status Badge */}
+                                <div className="absolute top-2 left-2">
+                                    {getStatusBadge(product.status)}
+                                </div>
+                                {/* Edit/Delete Overlay */}
+                                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        className="p-2 bg-white rounded-lg shadow-md hover:bg-orange-500 hover:text-white transition-colors"
+                                        title="Edit Product"
+                                    >
+                                        <MdEdit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteProduct(product._id)}
+                                        className="p-2 bg-white rounded-lg shadow-md hover:bg-red-500 hover:text-white transition-colors"
+                                        title="Delete Product"
+                                    >
+                                        <MdDelete className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
 
-                            {/* Age and Tags */}
-                            <div className="flex items-center justify-between text-xs mb-3">
-                                <div>
-                                    <p className="text-gray-500 mb-1">AGE</p>
-                                    <p className="font-semibold text-gray-900">{product.age}</p>
+                            {/* Product Details */}
+                            <div className="p-4">
+                                {/* Product Name and Category */}
+                                <div className="mb-3">
+                                    <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-2">{product.name}</h3>
+                                    <p className="text-xs text-gray-500">{product.category}</p>
                                 </div>
-                                <div>
-                                    <p className="text-gray-500 mb-1 text-right">Tags</p>
-                                    <div className="flex gap-1">
-                                        {product.tags.map((tag, idx) => (
-                                            <div key={idx} className="w-5 h-5 bg-gray-800 rounded-full"></div>
-                                        ))}
+
+                                {/* Description */}
+                                <p className="text-xs text-gray-600 mb-3 line-clamp-2">{product.description}</p>
+
+                                {/* Stock Info */}
+                                <div className="flex items-center justify-between text-xs mb-3 pb-3 border-b border-gray-100">
+                                    <div>
+                                        <p className="text-gray-500 mb-1">Stock</p>
+                                        <p className={`font-semibold ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-orange-600' : 'text-red-600'}`}>
+                                            {product.stock} units
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-gray-500 mb-1">Added</p>
+                                        <p className="font-semibold text-gray-900">
+                                            {new Date(product.createdAt).toLocaleDateString('en-IN', {
+                                                day: '2-digit',
+                                                month: 'short'
+                                            })}
+                                        </p>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Price and Actions */}
-                            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                                <span className="text-lg font-bold text-gray-900">₹{product.price.toFixed(2)}</span>
-                                <div className="flex gap-2">
-                                    <button className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
-                                        <FaShoppingCart className="w-4 h-4" />
-                                    </button>
-                                    <button className="px-4 py-2 bg-white border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:border-orange-500 hover:text-orange-500 transition-all">
-                                        Buy now
+                                {/* Price */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-lg font-bold text-gray-900">₹{product.price?.toLocaleString('en-IN')}</span>
+                                    <button className="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-colors">
+                                        View Details
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Empty State */}
-            {filteredProducts.length === 0 && (
-                <div className="text-center py-12">
-                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <MdFilterList className="w-12 h-12 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
-                    <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+                    ))}
                 </div>
             )}
         </div>

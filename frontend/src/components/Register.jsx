@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
+import API from '../../api';
 
 const Register = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -27,11 +31,59 @@ const Register = () => {
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
+        // Clear error when user starts typing
+        if (error) setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Registration submitted:', formData);
+        setError('');
+        setSuccess('');
+
+        // Validate password match
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        // Validate password length
+        if (formData.password.length < 8) {
+            setError('Password must be at least 8 characters long');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            // Prepare data to match backend schema
+            const registrationData = {
+                name: `${formData.firstName} ${formData.lastName}`.trim(),
+                email: formData.email,
+                phone: formData.phone,
+                password: formData.password,
+                address: `${formData.addressLine1}${formData.addressLine2 ? ', ' + formData.addressLine2 : ''}, ${formData.city}, ${formData.state} - ${formData.postalCode}`.trim()
+            };
+
+            const response = await API.post('/customer/auth/register', registrationData);
+
+            if (response.data.token) {
+                // Store token in localStorage
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+
+                setSuccess('Registration successful! Redirecting...');
+
+                // Redirect to home or dashboard after 2 seconds
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            }
+        } catch (err) {
+            console.error('Registration error:', err);
+            setError(err.response?.data?.message || 'Registration failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const inputClasses = "w-full px-4 py-3 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-gray-400";
@@ -48,6 +100,20 @@ const Register = () => {
                         Join APK Crackers and light up your celebrations
                     </p>
                 </div>
+
+                {/* Error Message */}
+                {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                        <p className="text-sm font-medium">{error}</p>
+                    </div>
+                )}
+
+                {/* Success Message */}
+                {success && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                        <p className="text-sm font-medium">{success}</p>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                     <button type="button" className="flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all">
@@ -75,7 +141,7 @@ const Register = () => {
                             <FaUser className="text-orange-500" />
                             <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label htmlFor="firstName" className={labelClasses}>First Name</label>
@@ -307,9 +373,13 @@ const Register = () => {
 
                     <button
                         type="submit"
-                        className="w-full bg-orange-600 text-white font-semibold text-lg py-4 rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-4 focus:ring-orange-500/20 transition-all shadow-sm"
+                        disabled={loading}
+                        className={`w-full font-semibold text-lg py-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-orange-500/20 transition-all shadow-sm ${loading
+                                ? 'bg-orange-400 text-white cursor-not-allowed'
+                                : 'bg-orange-600 text-white hover:bg-orange-700'
+                            }`}
                     >
-                        Create Account
+                        {loading ? 'Creating Account...' : 'Create Account'}
                     </button>
                 </form>
 

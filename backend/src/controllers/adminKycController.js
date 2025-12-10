@@ -60,3 +60,14 @@ export const reviewKYC = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+// ⭐ GET ALL PENDING KYCs FOR ADMIN DASHBOARD
+export const getPendingKYCs = async (req, res) => {
+  try {
+    const pendingKYCs = await KYC.find({ status: "pending_review" }).populate("sellerId");
+    res.json(pendingKYCs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
