@@ -1,23 +1,34 @@
 import express from "express";
 import { authenticate } from "../middleware/auth.js";
-import { sellerApproved } from "../middleware/sellerApproved.js";
-import upload from "../utils/multer.js";
-import { addProduct, getSellerProducts } from "../controllers/productController.js";
+import { sellerGuard } from "../middleware/sellerGuard.js";
+import upload from "../middleware/upload.js";
+
+import {
+  addProduct,
+  getSellerProducts
+} from "../controllers/productController.js";
 
 const router = express.Router();
 
-// Get all products for the authenticated seller
-router.get("/my-products", authenticate, getSellerProducts);
-console.log('✅ GET /my-products route registered');
+/**
+ * 🔐 SELLER — GET OWN PRODUCTS
+ */
+router.get(
+  "/my-products",
+  authenticate,
+  sellerGuard,
+  getSellerProducts
+);
 
-// Add new product
+/**
+ * 🔐 SELLER — ADD PRODUCT (KYC APPROVED ONLY)
+ */
 router.post(
   "/add",
   authenticate,
-  sellerApproved,
-  upload.array("images", 5), // max 5 images
+  sellerGuard,
+  upload.array("images", 5),
   addProduct
 );
-console.log('✅ POST /add route registered');
 
 export default router;

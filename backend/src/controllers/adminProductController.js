@@ -1,5 +1,5 @@
 import Product from "../models/Product.js";
-import { sendNotification } from "../utils/sendNotification.js";   // ⭐ IMPORTANT
+import { createNotification } from "../controllers/notificationController.js"; // ⭐ UPDATED
 
 
 // ⭐ GET ALL PENDING PRODUCTS FOR ADMIN REVIEW
@@ -27,13 +27,13 @@ export const approveProduct = async (req, res) => {
 
 
     // ⭐ SEND NOTIFICATION TO SELLER — PRODUCT APPROVED
-    await sendNotification(
-      product.sellerId,
-      "Seller",
-      "Product Approved",
-      `${product.name} has been approved.`,
-      "product"
-    );
+    await createNotification({
+      userId: product.sellerId,
+      userType: "seller",
+      title: "Product Approved",
+      message: `Your product "${product.name}" has been approved and is now live.`,
+      type: "product"
+    });
 
 
     res.json({ message: "Product approved successfully", product });
@@ -60,13 +60,13 @@ export const rejectProduct = async (req, res) => {
 
 
     // ⭐ SEND NOTIFICATION TO SELLER — PRODUCT REJECTED
-    await sendNotification(
-      product.sellerId,
-      "Seller",
-      "Product Rejected",
-      `Your product "${product.name}" was rejected.`,
-      "product"
-    );
+    await createNotification({
+      userId: product.sellerId,
+      userType: "seller",
+      title: "Product Rejected",
+      message: `Your product "${product.name}" was rejected. Reason: ${reason || "Not provided"}`,
+      type: "product"
+    });
 
 
     res.json({ message: "Product rejected", product });
@@ -75,6 +75,7 @@ export const rejectProduct = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 
 // ⭐ GET TOTAL PRODUCTS COUNT FOR ADMIN DASHBOARD

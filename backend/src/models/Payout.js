@@ -1,20 +1,52 @@
 import mongoose from "mongoose";
 
-const payoutSchema = new mongoose.Schema({
-  sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "Seller" },
-  orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
+const payoutSchema = new mongoose.Schema(
+  {
+    sellerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Seller",
+      required: true,
+      index: true,
+    },
 
-  totalAmount: Number,     // total order amount
-  commission: Number,      // platform fee
-  netAmount: Number,       // seller gets this
+    orderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+      required: true,
+      unique: true, // ⭐ one payout per order
+      index: true,
+    },
 
-  status: {
-    type: String,
-    enum: ["pending", "processing", "paid"],
-    default: "pending"
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    commission: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    netAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "processing", "paid"],
+      default: "pending",
+      index: true,
+    },
+
+    settlementDate: {
+      type: Date, // T+7 or scheduled payout date
+    },
   },
-
-  settlementDate: Date     // T+7 date
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 export default mongoose.model("Payout", payoutSchema);

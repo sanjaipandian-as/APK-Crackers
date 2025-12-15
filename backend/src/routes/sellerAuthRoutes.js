@@ -3,7 +3,10 @@ import { registerSeller, loginSeller } from "../controllers/sellerAuthController
 
 const router = express.Router();
 
-router.post("/register", registerSeller);
+// ⭐ Seller Signup
+router.post("/signup", registerSeller);
+
+// ⭐ Seller Login
 router.post("/login", loginSeller);
 
 export default router;

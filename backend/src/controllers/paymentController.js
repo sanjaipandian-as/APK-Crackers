@@ -1,20 +1,30 @@
-import { razorpayInstance } from "../config/razorpay.js";
+import razorpayInstance from "../config/razorpay.js";
 import Order from "../models/Order.js";
 import Payout from "../models/Payout.js";
-import { sendNotification } from "../utils/sendNotification.js";  // ⭐ IMPORTANT
+import { sendNotification } from "../utils/sendNotification.js";
 import crypto from "crypto";
 
 
-// STEP 4 — Create Razorpay Payment Order
+// ==============================
+// STEP 4 — Create Razorpay Order
+// ==============================
 export const createPaymentOrder = async (req, res) => {
   try {
+    if (!razorpayInstance) {
+      return res.status(500).json({
+        message: "Payment gateway not configured",
+      });
+    }
+
     const { orderId } = req.body;
 
     const order = await Order.findById(orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
     const options = {
-      amount: order.totalAmount * 100,   // convert to paise
+      amount: order.totalAmount * 100, // paise
       currency: "INR",
       receipt: `receipt_${order._id}`,
     };
@@ -24,30 +34,30 @@ export const createPaymentOrder = async (req, res) => {
     res.json({
       message: "Payment order created",
       paymentOrder,
-      razorpayKey: process.env.RAZORPAY_KEY_ID
+      razorpayKey: process.env.RAZORPAY_KEY_ID,
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 
-
-// STEP 5 — Verify Payment & Auto-Create Payout
+// =====================================
+// STEP 5 — Verify Payment & Create Payout
+// =====================================
 export const verifyPayment = async (req, res) => {
   try {
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      orderId
+      orderId,
     } = req.body;
 
-    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const sign = `${razorpay_order_id}|${razorpay_payment_id}`;
 
     const expectedSign = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "")
       .update(sign)
       .digest("hex");
 
@@ -55,32 +65,32 @@ export const verifyPayment = async (req, res) => {
       return res.status(400).json({ message: "Invalid payment signature" });
     }
 
-    // Fetch order from DB
     const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
-    // Update payment success
+    // Update order
     order.paymentStatus = "success";
     order.status = "paid";
     await order.save();
 
-
-    // ⭐ SEND PAYMENT SUCCESS NOTIFICATION TO CUSTOMER
+    // ⭐ Notify customer
     await sendNotification(
       order.customerId,
-      "Customer",
+      "customer",
       "Payment Successful",
-      "Your payment has been verified.",
+      "Your payment has been verified successfully.",
       "payment"
     );
 
-
-    // ⭐ AUTO CREATE PAYOUT ENTRY FOR SELLER
-    const commissionRate = 0.10; // Platform earns 10%
+    // ⭐ Create payout
+    const commissionRate = 0.1;
     const commission = order.totalAmount * commissionRate;
     const netAmount = order.totalAmount - commission;
 
     const settlementDate = new Date();
-    settlementDate.setDate(settlementDate.getDate() + 7); // T+7 cycle
+    settlementDate.setDate(settlementDate.getDate() + 7);
 
     await Payout.create({
       sellerId: order.sellerId,
@@ -89,35 +99,39 @@ export const verifyPayment = async (req, res) => {
       commission,
       netAmount,
       settlementDate,
-      status: "pending"
+      status: "pending",
     });
-
 
     res.json({
       message: "Payment verified successfully",
-      order
+      order,
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 
-
+// =====================
 // STEP 6 — Payment Failed
+// =====================
 export const paymentFailed = async (req, res) => {
   try {
     const { orderId } = req.body;
 
     const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
     order.paymentStatus = "failed";
     order.status = "pending_payment";
     await order.save();
 
-    res.json({ message: "Payment failed", order });
-
+    res.json({
+      message: "Payment failed",
+      order,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

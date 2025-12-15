@@ -1,18 +1,19 @@
 import express from "express";
 import { authenticate } from "../middleware/auth.js";
-import { adminOnly } from "../middleware/adminOnly.js";
+
 import {
   getAllOrders,
   getOrdersByStatus,
   adminUpdateOrderStatus,
   cancelOrder
 } from "../controllers/adminOrderController.js";
+import { isAdmin } from "../middleware/isAdmin.js";
 
 const router = express.Router();
 
-router.get("/", authenticate, adminOnly, getAllOrders);
-router.get("/:status", authenticate, adminOnly, getOrdersByStatus);
-router.put("/update/:orderId", authenticate, adminOnly, adminUpdateOrderStatus);
-router.put("/cancel/:orderId", authenticate, adminOnly, cancelOrder);
+router.get("/", authenticate, isAdmin, getAllOrders);
+router.get("/:status", authenticate, isAdmin, getOrdersByStatus);
+router.put("/update/:orderId", authenticate, isAdmin, adminUpdateOrderStatus);
+router.put("/cancel/:orderId", authenticate, isAdmin, cancelOrder);
 
 export default router;

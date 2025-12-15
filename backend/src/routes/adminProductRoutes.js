@@ -1,6 +1,7 @@
 import express from "express";
 import { authenticate } from "../middleware/auth.js";
-import { adminOnly } from "../middleware/adminOnly.js";
+import { isAdmin } from "../middleware/isAdmin.js";  // ⭐ UPDATED NAME
+
 import {
   getPendingProducts,
   approveProduct,
@@ -11,15 +12,15 @@ import {
 const router = express.Router();
 
 // Get all pending products
-router.get("/pending", authenticate, adminOnly, getPendingProducts);
+router.get("/pending", authenticate, isAdmin, getPendingProducts);
 
 // Get total products count
-router.get("/count", authenticate, adminOnly, getAllProductsCount);
+router.get("/count", authenticate, isAdmin, getAllProductsCount);
 
 // Approve product
-router.put("/approve/:productId", authenticate, adminOnly, approveProduct);
+router.put("/approve/:productId", authenticate, isAdmin, approveProduct);
 
 // Reject product
-router.put("/reject/:productId", authenticate, adminOnly, rejectProduct);
+router.put("/reject/:productId", authenticate, isAdmin, rejectProduct);
 
 export default router;

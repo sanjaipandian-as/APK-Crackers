@@ -7,6 +7,7 @@ import {
   getAllPayouts,
   markPayoutPaid
 } from "../controllers/payoutController.js";
+import { isAdmin } from "../middleware/isAdmin.js";
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ const router = express.Router();
 router.get("/seller", authenticate, getSellerPayouts);
 
 // Admin routes
-router.get("/admin", authenticate, adminOnly, getAllPayouts);
-router.put("/admin/pay/:payoutId", authenticate, adminOnly, markPayoutPaid);
+router.get("/admin", authenticate, isAdmin, getAllPayouts);
+router.put("/admin/pay/:payoutId", authenticate, isAdmin, markPayoutPaid);
 
 export default router;

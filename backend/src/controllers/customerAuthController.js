@@ -1,45 +1,110 @@
 import Customer from "../models/Customer.js";
 import bcrypt from "bcrypt";
-import { generateToken } from "../utils/jwt.js";
+import jwt from "jsonwebtoken";
 
+// ==============================
+// ⭐ Generate JWT
+// ==============================
+const generateToken = (id) => {
+  return jwt.sign(
+    { id },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
+  );
+};
+
+// ==============================
+// ⭐ REGISTER CUSTOMER
+// ==============================
 export const registerCustomer = async (req, res) => {
   try {
     const { name, email, phone, password, address } = req.body;
 
-    const exists = await Customer.findOne({ email });
-    if (exists) return res.status(400).json({ message: "Customer already exists" });
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({
+        message: "All required fields must be provided",
+      });
+    }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const exists = await Customer.findOne({ email });
+    if (exists) {
+      return res.status(400).json({
+        message: "Customer already exists",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await Customer.create({
-      name, email, phone, password: hashed, address
+      name,
+      email,
+      phone,
+      password: hashedPassword,
+      address,
     });
 
-    const token = generateToken(user._id, "customer");
+    const token = generateToken(user._id);
 
-    res.json({ message: "Customer registered", token, user });
+    // remove password before response
+    const { password: _, ...safeUser } = user._doc;
 
+    res.status(201).json({
+      message: "Customer registered successfully",
+      token,
+      user: safeUser,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Register error:", err);
+    res.status(500).json({
+      message: "Customer registration failed",
+    });
   }
 };
 
-
+// ==============================
+// ⭐ LOGIN CUSTOMER
+// ==============================
 export const loginCustomer = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await Customer.findOne({ email });
-    if (!user) return res.status(404).json({ message: "Customer not found" });
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ message: "Invalid credentials" });
+    // ⭐ IMPORTANT: explicitly fetch password
+    const user = await Customer.findOne({ email }).select("+password");
 
-    const token = generateToken(user._id, "customer");
+    if (!user) {
+      return res.status(404).json({
+        message: "Customer not found",
+      });
+    }
 
-    res.json({ message: "Login successful", token, user });
+    const isMatch = await bcrypt.compare(password, user.password);
 
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Invalid credentials",
+      });
+    }
+
+    const token = generateToken(user._id);
+
+    // remove password before sending response
+    const { password: _, ...safeUser } = user._doc;
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: safeUser,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Login error:", err);
+    res.status(500).json({
+      message: "Login failed",
+    });
   }
 };

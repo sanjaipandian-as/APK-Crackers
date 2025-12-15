@@ -1,93 +1,114 @@
 import KYC from "../models/KYC.js";
+import Seller from "../models/Seller.js";
+import { createNotification } from "./notificationController.js";
 
 export const uploadKYC = async (req, res) => {
   try {
-    console.log("=== KYC Upload Started ===");
     const sellerId = req.user._id;
-    console.log("Seller ID:", sellerId);
+    const files = req.files;
 
-    // Files come from req.files (multer)
-    const {
-      aadhaarFront,
-      aadhaarBack,
-      panCard,
-      tradeLicense,
-      gstCertificate,
-      licenseImage,
-      fireNOC,
-      chequeImage
-    } = req.files;
+    // 🔒 Basic validation
+    if (!files || Object.keys(files).length === 0) {
+      return res.status(400).json({
+        message: "KYC documents are required",
+      });
+    }
 
-    console.log("Files received:", Object.keys(req.files || {}));
+    // 🔒 Double safety check (controller-level)
+    const existingKyc = await KYC.findOne({ sellerId });
 
-    // Text fields come from req.body
+    if (existingKyc && existingKyc.status === "pending_review") {
+      return res.status(400).json({
+        message: "KYC already submitted and under review",
+      });
+    }
+
+    if (existingKyc && existingKyc.status === "approved") {
+      return res.status(400).json({
+        message: "KYC already approved",
+      });
+    }
+
     const {
       licenseType,
       licenseNumber,
       expiryDate,
       fireNOCExpiry,
       bankAccountNumber,
-      ifsc
+      ifsc,
     } = req.body;
 
-    console.log("Text fields received:", {
-      licenseType,
-      licenseNumber,
-      expiryDate,
-      fireNOCExpiry,
-      bankAccountNumber,
-      ifsc
-    });
-
-    console.log("Creating KYC record...");
-    const kycData = await KYC.create({
+    const kycData = {
       sellerId,
+
       identity: {
-        aadhaarFront: aadhaarFront?.[0]?.path,
-        aadhaarBack: aadhaarBack?.[0]?.path,
-        panCard: panCard?.[0]?.path,
+        aadhaarFront: files?.aadhaarFront?.[0]?.path,
+        aadhaarBack: files?.aadhaarBack?.[0]?.path,
+        panCard: files?.panCard?.[0]?.path,
       },
+
       business: {
-        tradeLicense: tradeLicense?.[0]?.path,
-        gstCertificate: gstCertificate?.[0]?.path,
+        tradeLicense: files?.tradeLicense?.[0]?.path,
+        gstCertificate: files?.gstCertificate?.[0]?.path,
       },
+
       explosiveLicense: {
         licenseType,
         licenseNumber,
-        licenseImage: licenseImage?.[0]?.path,
-        expiryDate: expiryDate ? new Date(expiryDate) : undefined
+        licenseImage: files?.licenseImage?.[0]?.path,
+        expiryDate: expiryDate ? new Date(expiryDate) : null,
       },
+
       fireNOC: {
-        nocDocument: fireNOC?.[0]?.path,
-        expiryDate: fireNOCExpiry ? new Date(fireNOCExpiry) : undefined
+        nocDocument: files?.fireNOC?.[0]?.path,
+        expiryDate: fireNOCExpiry ? new Date(fireNOCExpiry) : null,
       },
+
       bank: {
         accountNumber: bankAccountNumber,
         ifsc,
-        chequeImage: chequeImage?.[0]?.path
+        chequeImage: files?.chequeImage?.[0]?.path,
       },
-      status: "pending_review"
+
+      status: "pending_review",
+    };
+
+    let kyc;
+
+    // ✅ Allow re-upload ONLY if previously rejected
+    if (existingKyc && existingKyc.status === "rejected") {
+      kyc = await KYC.findOneAndUpdate(
+        { sellerId },
+        kycData,
+        { new: true }
+      );
+    } else {
+      kyc = await KYC.create(kycData);
+    }
+
+    // ✅ Sync Seller KYC status
+    await Seller.findByIdAndUpdate(sellerId, {
+      kycStatus: "pending_review",
     });
 
-    console.log("KYC record created successfully");
+    // 🔔 Notify seller
+    await createNotification({
+      userId: sellerId,
+      userType: "seller",
+      title: "KYC Submitted",
+      message: "Your KYC has been submitted and is under admin review.",
+      type: "kyc",
+    });
 
-    res.json({
+    return res.status(201).json({
       message: "KYC submitted successfully. Waiting for admin approval.",
-      kycData
+      kyc,
     });
 
   } catch (err) {
-    console.error("=== KYC Upload Error ===");
-    console.error("Error name:", err.name);
-    console.error("Error message:", err.message);
-    console.error("Error stack:", err.stack);
-
-    res.status(500).json({
-      message: err.message || "KYC upload failed",
-      error: err.name,
-      details: err.toString(),
-      stack: err.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
+    return res.status(500).json({
+      message: "KYC upload failed",
+      error: err.message,
     });
   }
-
 };

@@ -1,10 +1,11 @@
 import express from "express";
-import upload from "../utils/multer.js";
-import { uploadKYC } from "../controllers/kycController.js";
 import { authenticate } from "../middleware/auth.js";
+import upload from "../middleware/upload.js";
+import { uploadKYC } from "../controllers/kycController.js";
 
 const router = express.Router();
 
+// ❌ NO sellerGuard here
 router.post(
   "/upload",
   authenticate,
@@ -22,4 +23,3 @@ router.post(
 );
 
 export default router;
-    

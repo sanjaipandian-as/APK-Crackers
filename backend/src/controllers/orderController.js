@@ -1,7 +1,7 @@
 import Cart from "../models/Cart.js";
 import Product from "../models/Product.js";
 import Order from "../models/Order.js";
-import { sendNotification } from "../utils/sendNotification.js";  // ⭐ IMPORTANT
+import { createNotification } from "../controllers/notificationController.js";  // ⭐ UPDATED
 
 
 export const createOrder = async (req, res) => {
@@ -52,16 +52,23 @@ export const createOrder = async (req, res) => {
       paymentStatus: "pending"
     });
 
+    // ⭐ NOTIFICATION 1 — Notify Seller
+    await createNotification({
+      userId: sellerId,
+      userType: "seller",
+      title: "New Order Received",
+      message: "A new order has been placed for your products.",
+      type: "order"
+    });
 
-    // ⭐⭐ ADD NOTIFICATION HERE — RIGHT AFTER ORDER IS CREATED ⭐⭐
-    await sendNotification(
-      sellerId,
-      "Seller",
-      "New Order Received",
-      "A new order has been placed for your products.",
-      "order"
-    );
-
+    // ⭐ NOTIFICATION 2 — Notify Customer
+    await createNotification({
+      userId: customerId,
+      userType: "customer",
+      title: "Order Placed",
+      message: "Your order has been created. Proceed to payment.",
+      type: "order"
+    });
 
     // Clear customer cart
     await Cart.findOneAndUpdate(
