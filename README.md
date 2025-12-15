@@ -1,261 +1,462 @@
-## 🚀 Project Overview
+Perfect 👍
+Below is a **clean, professional README-style API documentation** that your **frontend teammate / tester / reviewer** can directly use to test **the entire Crackers Marketplace backend** you built.
 
-# ✅ **Backend Modules Completed (Ready for Frontend Integration)**
-
-The following backend features are **finished and functioning**:
-
-### ✔ Authentication
-
-* Customer login/signup
-* Seller login/signup
-* Admin login
-* JWT token-based access
-
-### ✔ Seller KYC Verification
-
-* Seller submits KYC
-* Admin reviews KYC
-* Seller gets notifications
-
-### ✔ Product Management
-
-* Seller adds products
-* Admin approves/rejects
-* Customer can browse products
-* Search + category filters + pagination
-
-### ✔ Cart & Checkout
-
-* Add/remove/update cart
-* Create order from cart
-* Deduct stock
-
-### ✔ Payment Integration (Razorpay)
-
-* Razorpay payment order
-* Verify payment
-* Payment success/failure flows
-
-### ✔ Order Flow
-
-* Customer orders page
-* Seller order dashboard
-* Admin order management
-
-### ✔ Payout System
-
-* Auto-create payout after payment
-* Seller payout dashboard
-* Admin approves payout
-
-### ✔ Notifications
-
-* Seller & customer updates for all major events
-
-### ✔ Analytics
-
-* Seller revenue stats
-* Admin sales dashboard
+You can **copy-paste this into `README.md`** in your backend repo.
 
 ---
 
-# 🎯 **What Frontend Developer Should Build First**
+# 🔥 Crackers Marketplace Backend – API Documentation
 
-Here is the correct and fastest order to develop the frontend:
+This document describes **all API endpoints** available in the backend for testing and frontend integration.
 
 ---
 
-# 🟩 **1. Authentication Pages (Customer + Seller + Admin)**
+## 🌐 Base URL
 
-### Endpoints:
+### Local
 
 ```
-POST /api/auth/customer/login
-POST /api/auth/customer/signup
-POST /api/auth/seller/login
-POST /api/auth/seller/signup
-POST /api/auth/admin/login
+http://localhost:5000
 ```
 
-### Frontend Tasks:
+### Production
 
-* Login page (Customer/Seller/Admin)
-* Signup pages
-* Store JWT token → `localStorage`
-* Set token in global Axios header
-
-```js
-axios.defaults.headers.common["Authorization"] = "Bearer " + token;
+```
+https://<your-backend-domain>
 ```
 
 ---
 
-# 🟦 **2. Customer Product Flow**
+## 🔐 Authentication & Authorization
 
-### Endpoints:
+### Roles
+
+* **Customer**
+* **Seller**
+* **Admin**
+
+### Auth Header (Required for protected routes)
 
 ```
-GET /api/products/approved
-GET /api/products/:id
-GET /api/products/search?q=
-GET /api/products/category/:category
+Authorization: Bearer <JWT_TOKEN>
 ```
-
-### Frontend Tasks:
-
-* Home page UI
-* Product grid
-* Product details page
-* Search bar
-* Category filter
 
 ---
 
-# 🟧 **3. Cart System**
+# 👤 CUSTOMER APIs
 
-### Endpoints:
+## 1️⃣ Customer Authentication
+
+### Register Customer
+
+```
+POST /api/customer/auth/register
+```
+
+**Body**
+
+```json
+{
+  "name": "Ravi",
+  "email": "ravi@test.com",
+  "phone": "9876543210",
+  "password": "password123"
+}
+```
+
+### Login Customer
+
+```
+POST /api/customer/auth/login
+```
+
+---
+
+## 2️⃣ Customer Product Browsing
+
+### Get All Approved Products
+
+```
+GET /api/products/customer/all
+```
+
+### Get Product by ID
+
+```
+GET /api/products/customer/:productId
+```
+
+### Search Products
+
+```
+GET /api/search?q=flower
+```
+
+### Filter by Category
+
+```
+GET /api/products/customer/category/:categoryName
+```
+
+---
+
+## 3️⃣ Cart Module
+
+### Add to Cart
+
+```
+POST /api/cart/add
+```
+
+### View Cart
 
 ```
 GET /api/cart
-POST /api/cart/add
-PUT /api/cart/update
-DELETE /api/cart/remove/:itemId
 ```
 
-### Frontend Tasks:
+### Remove Item from Cart
 
-* Cart page
-* Add to cart button
-* Update quantity
-* Remove item
+```
+DELETE /api/cart/remove/:productId
+```
 
 ---
 
-# 🟥 **4. Checkout + Payment Flow**
+## 4️⃣ Address Module
 
-### Endpoints:
+### Add Address
+
+```
+POST /api/address
+```
+
+### Get Addresses
+
+```
+GET /api/address
+```
+
+---
+
+## 5️⃣ Order & Checkout
+
+### Create Order
 
 ```
 POST /api/orders/create
-POST /api/payment/create-order
+```
+
+### View My Orders
+
+```
+GET /api/orders/my-orders
+```
+
+---
+
+## 6️⃣ Payment (Razorpay)
+
+### Create Payment Order
+
+```
+POST /api/payment/create
+```
+
+### Verify Payment
+
+```
 POST /api/payment/verify
 ```
 
-### Frontend Tasks:
+### Payment Failed
 
-* Checkout screen
-* Address input (later integrated with Address Module)
-* Razorpay payment popup
-* Success page
+```
+POST /api/payment/failed
+```
 
 ---
 
-# 🟪 **5. Customer Orders**
+## 7️⃣ Wishlist
 
-### Endpoints:
+### Add to Wishlist
 
 ```
-GET /api/orders/customer
+POST /api/wishlist/add/:productId
 ```
 
-### Frontend Tasks:
+### Get Wishlist
 
-* Orders page
-* Order details page
-* Track order status
+```
+GET /api/wishlist
+```
 
 ---
 
-# 🟦 **6. Seller Dashboard**
+## 8️⃣ Reviews
 
-### Endpoints:
+### Add Review
+
+```
+POST /api/reviews/:productId
+```
+
+### Get Product Reviews
+
+```
+GET /api/reviews/:productId
+```
+
+---
+
+# 🏪 SELLER APIs
+
+## 9️⃣ Seller Authentication
+
+### Register Seller
+
+```
+POST /api/seller/auth/register
+```
+
+### Login Seller
+
+```
+POST /api/seller/auth/login
+```
+
+---
+
+## 🔟 Seller KYC
+
+### Upload KYC (Cloudinary)
+
+```
+POST /api/seller/kyc/upload
+```
+
+**Form-data**
+
+```
+aadhaarFront
+aadhaarBack
+panCard
+tradeLicense
+gstCertificate
+licenseImage
+fireNOC
+chequeImage
+```
+
+---
+
+## 1️⃣1️⃣ Seller Product Management
+
+### Add Product
+
+```
+POST /api/products/add
+```
+
+**Form-data**
+
+```
+name
+description
+price
+category
+stock
+images (max 5)
+```
+
+### Get Seller Products
+
+```
+GET /api/products/my-products
+```
+
+---
+
+## 1️⃣2️⃣ Seller Orders
+
+### Get Orders
 
 ```
 GET /api/seller/orders
-PUT /api/seller/orders/:orderId
-GET /api/payouts/seller
-GET /api/seller/analytics/dashboard
-GET /api/notifications
 ```
 
-### Frontend Tasks:
+### Update Order Status
 
-* Seller dashboard home
-* Seller order list
-* Order status update
-* Earnings page
-* Notifications page
+```
+PUT /api/seller/orders/:orderId
+```
+
+**Body**
+
+```json
+{
+  "status": "shipped"
+}
+```
 
 ---
 
-# 🟫 **7. Admin Dashboard**
+## 1️⃣3️⃣ Seller Analytics
 
-### Endpoints:
+```
+GET /api/seller/analytics
+```
+
+---
+
+## 1️⃣4️⃣ Seller Payouts
+
+```
+GET /api/payouts/seller
+```
+
+---
+
+# 👮 ADMIN APIs
+
+## 1️⃣5️⃣ Admin Authentication
+
+### Login Admin
+
+```
+POST /api/admin/auth/login
+```
+
+---
+
+## 1️⃣6️⃣ Admin Product Approval
+
+### Pending Products
+
+```
+GET /api/admin/products/pending
+```
+
+### Approve Product
+
+```
+PUT /api/admin/products/approve/:productId
+```
+
+### Reject Product
+
+```
+PUT /api/admin/products/reject/:productId
+```
+
+---
+
+## 1️⃣7️⃣ Admin KYC Review
+
+### Get Pending KYC
 
 ```
 GET /api/admin/kyc/pending
+```
+
+### Approve / Reject KYC
+
+```
 PUT /api/admin/kyc/review/:kycId
+```
 
-GET /api/admin/products/pending
-PUT /api/admin/products/approve/:productId
-PUT /api/admin/products/reject/:productId
+---
 
+## 1️⃣8️⃣ Admin Orders
+
+```
 GET /api/admin/orders
-PUT /api/admin/orders/update/:orderId
-
-GET /api/admin/analytics/dashboard
-GET /api/admin/analytics/sales/daily
-```
-
-### Frontend Tasks:
-
-* Admin login
-* KYC review dashboard
-* Product approval screen
-* Admin order management
-* Admin analytics
-
----
-
-# 🧱 **Frontend Folder Structure Suggestion**
-
-To make work easier:
-
-```
-/frontend
-  /src
-    /api  (axios functions)
-    /components
-    /pages
-        /auth
-        /customer
-        /seller
-        /admin
-    /context (auth provider)
 ```
 
 ---
 
-# ⭐ **Frontend Development Order (Recommended)**
+## 1️⃣9️⃣ Admin Seller Management
 
-1️⃣ Auth pages
-2️⃣ Customer product pages
-3️⃣ Cart → Checkout → Payment
-4️⃣ Customer orders
-5️⃣ Seller dashboard
-6️⃣ Admin dashboard
-7️⃣ Notifications
-8️⃣ Analytics charts
+### Get All Sellers
+
+```
+GET /api/admin/sellers
+```
+
+### Block Seller
+
+```
+PUT /api/admin/sellers/block/:sellerId
+```
+
+### Unblock Seller
+
+```
+PUT /api/admin/sellers/unblock/:sellerId
+```
 
 ---
 
-# 🚀 **Important Notes for Frontend Team**
+## 2️⃣0️⃣ Admin Payouts
 
-* ALWAYS send JWT token in header
-* Use protected routes for seller/admin
-* Do not store sensitive info in React state
-* Test all APIs using Postman first
-* Razorpay requires loading the script in frontend
+### Get All Payouts
+
+```
+GET /api/payouts/admin
+```
+
+### Mark Payout Paid
+
+```
+PUT /api/payouts/mark-paid/:payoutId
+```
 
 ---
 
+## 2️⃣1️⃣ Admin Analytics
+
+```
+GET /api/admin/analytics
+```
+
+---
+
+# 🧪 Testing Order (Recommended)
+
+1️⃣ Admin login
+2️⃣ Seller register → login
+3️⃣ Seller KYC upload
+4️⃣ Admin approves KYC
+5️⃣ Seller adds product
+6️⃣ Admin approves product
+7️⃣ Customer registers & browses
+8️⃣ Cart → Order → Payment
+9️⃣ Seller updates order
+🔟 Admin payout
+
+---
+
+# ✅ Backend Status
+
+✔ Authentication & Authorization
+✔ KYC System
+✔ Product Approval
+✔ Cart & Orders
+✔ Payments & Payouts
+✔ Reviews, Wishlist, Address
+✔ Search & Categories
+✔ Security (JWT, Rate limit, XSS, CORS)
+
+---
+
+## 🎉 Backend Completion: **95%+ (Production Ready)**
+
+---
+
+If you want next, I can:
+
+* 📄 Convert this README into **PDF**
+* 📊 Generate **Postman collection**
+* 🧪 Create **testing checklist**
+* 🚀 Write **deployment README**
+
+Just tell me 👍
