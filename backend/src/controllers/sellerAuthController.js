@@ -21,21 +21,39 @@ export const registerSeller = async (req, res) => {
     const { name, email, phone, password, businessName, businessType, businessAddress } = req.body;
 
     // Validate required fields
-    if (!name || !email || !phone || !password || !businessName || !businessType || !businessAddress) {
-      console.log("❌ Missing required fields");
-      return res.status(400).json({
-        message: "All fields are required",
-        missing: {
-          name: !name,
-          email: !email,
-          phone: !phone,
-          password: !password,
-          businessName: !businessName,
-          businessType: !businessType,
-          businessAddress: !businessAddress
-        }
-      });
-    }
+    if (
+  !name ||
+  !email ||
+  !phone ||
+  !password ||
+  !businessName ||
+  !businessType ||
+  !businessAddress ||
+  !pincode ||
+  !state ||
+  !city ||
+  !addressLine
+) {
+  console.log("❌ Missing required fields");
+  return res.status(400).json({
+    message: "All fields are required",
+    missing: {
+      name: !name,
+      email: !email,
+      phone: !phone,
+      password: !password,
+      businessName: !businessName,
+      businessType: !businessType,
+      businessAddress: {
+        pincode: !pincode,
+        state: !state,
+        city: !city,
+        addressLine: !addressLine,
+      },
+    },
+  });
+}
+
 
     // Check if seller already exists
     const exists = await Seller.findOne({ email });
