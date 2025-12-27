@@ -311,7 +311,7 @@ const Cart = () => {
             {error && (
                 <div className="max-w-7xl mx-auto px-4 mb-4">
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-3">
-                        <FaTimes className="w-4 h-4 flex-shrink-0" />
+                        <FaTimes className="w-4 h-4 p-0 flex-shrink-0" />
                         <p className="font-medium flex-1">{error}</p>
                         <button onClick={() => setError('')} className="text-red-500 hover:text-red-700">
                             <FaTimes className="w-4 h-4" />
