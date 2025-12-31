@@ -85,6 +85,8 @@ import searchRoutes from "./src/routes/searchRoutes.js";
 import notificationRoutes from "./src/routes/notificationRoutes.js";
 import payoutRoutes from "./src/routes/payoutRoutes.js";
 import sellerProfileRoutes from "./src/routes/sellerProfileRoutes.js";
+import supportRoutes from "./src/routes/supportRoutes.js";
+import publicSellerRoutes from "./src/routes/publicSellerRoutes.js";
 
 
 // =========================
@@ -130,6 +132,8 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/support", supportRoutes);
+app.use("/api/sellers", publicSellerRoutes);
 
 
 // =========================

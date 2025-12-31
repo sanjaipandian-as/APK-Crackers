@@ -156,9 +156,21 @@ const SellerOrderview = ({ orderId }) => {
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl overflow-hidden">
                                             {item.productId?.images?.[0] ? (
-                                                <img src={item.productId.images[0]} alt={item.productId.name} className="w-full h-full object-cover" />
+                                                <img
+                                                    src={item.productId.images[0]}
+                                                    alt={item.productId.name}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        e.target.src = '/images/placeholder.jpg';
+                                                        e.target.onerror = null;
+                                                    }}
+                                                />
                                             ) : (
-                                                '✨'
+                                                <img
+                                                    src="/images/placeholder.jpg"
+                                                    alt="No Image"
+                                                    className="w-full h-full object-cover"
+                                                />
                                             )}
                                         </div>
                                         <div>

@@ -97,7 +97,8 @@ const Myproducts = ({ onNavigate }) => {
     // Safety check: ensure products is always an array
     const filteredProducts = Array.isArray(products) ? products.filter(product => {
         const matchesSearch = product.name?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = filterCategory === 'All' || product.category === filterCategory;
+        const catName = typeof product.category === 'object' ? product.category?.main : product.category;
+        const matchesCategory = filterCategory === 'All' || catName === filterCategory;
         return matchesSearch && matchesCategory;
     }) : [];
 
@@ -199,9 +200,13 @@ const Myproducts = ({ onNavigate }) => {
                             {/* Product Image */}
                             <div className="relative overflow-hidden">
                                 <img
-                                    src={product.images?.[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
+                                    src={product.images?.[0] || '/images/placeholder.jpg'}
                                     alt={product.name}
                                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                                    onError={(e) => {
+                                        e.target.src = '/images/placeholder.jpg';
+                                        e.target.onerror = null;
+                                    }}
                                 />
                                 {/* Status Badge */}
                                 <div className="absolute top-2 left-2">
@@ -231,7 +236,7 @@ const Myproducts = ({ onNavigate }) => {
                                 {/* Product Name and Category */}
                                 <div className="mb-3">
                                     <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-2">{product.name}</h3>
-                                    <p className="text-xs text-gray-500">{product.category}</p>
+                                    <p className="text-xs text-gray-500">{product.category?.main || product.category}</p>
                                 </div>
 
                                 {/* Description */}
@@ -241,8 +246,8 @@ const Myproducts = ({ onNavigate }) => {
                                 <div className="flex items-center justify-between text-xs mb-3 pb-3 border-b border-gray-100">
                                     <div>
                                         <p className="text-gray-500 mb-1">Stock</p>
-                                        <p className={`font-semibold ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-orange-600' : 'text-red-600'}`}>
-                                            {product.stock} units
+                                        <p className={`font-semibold ${(product.stock_control?.available_pieces || product.stock || 0) > 10 ? 'text-green-600' : (product.stock_control?.available_pieces || product.stock || 0) > 0 ? 'text-orange-600' : 'text-red-600'}`}>
+                                            {product.stock_control?.available_pieces || product.stock || 0} units
                                         </p>
                                     </div>
                                     <div className="text-right">
@@ -258,7 +263,7 @@ const Myproducts = ({ onNavigate }) => {
 
                                 {/* Price */}
                                 <div className="flex items-center justify-between">
-                                    <span className="text-lg font-bold text-gray-900">₹{product.price?.toLocaleString('en-IN')}</span>
+                                    <span className="text-lg font-bold text-gray-900">₹{(product.pricing?.selling_price || product.price || 0).toLocaleString('en-IN')}</span>
                                     <button className="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-colors">
                                         View Details
                                     </button>

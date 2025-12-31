@@ -323,7 +323,7 @@ const Payment = () => {
         if (cartItems.length === 0) return 0;
 
         return cartItems.reduce((sum, item) => {
-            const itemPrice = item.price || item.productId?.price || 0;
+            const itemPrice = item.price || item.productId?.pricing?.selling_price || item.productId?.price || 0;
             const itemQuantity = item.quantity || 1;
             return sum + (itemPrice * itemQuantity);
         }, 0);
@@ -449,42 +449,52 @@ const Payment = () => {
 
                             <div className="p-6 space-y-4">
                                 {(order?.items || cartItems)?.map((item, index) => (
-                                    <div key={index} className="flex gap-5 p-5 bg-white rounded-lg border border-gray-200 hover:border-orange-300 hover:shadow-sm transition-all">
-                                        <div className="w-24 h-24 bg-gray-50 rounded-xl border-2 border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                            {item.productId?.images?.[0] || item.images?.[0] ? (
-                                                <img
-                                                    src={item.productId?.images?.[0] || item.images?.[0]}
-                                                    alt={item.productId?.name || item.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="text-3xl">🎆</div>
-                                            )}
-                                        </div>
+                                    <div key={index} className="flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-5 bg-white rounded-xl border border-gray-200 hover:border-orange-300 hover:shadow-sm transition-all">
+                                        <div className="flex gap-4 items-center sm:items-start flex-1">
+                                            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 rounded-xl border-2 border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                {item.productId?.images?.[0] || item.images?.[0] ? (
+                                                    <img
+                                                        src={item.productId?.images?.[0] || item.images?.[0]}
+                                                        alt={item.productId?.name || item.name}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            e.target.src = '/images/placeholder.jpg';
+                                                            e.target.onerror = null;
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src="/images/placeholder.jpg"
+                                                        alt="No Image"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                )}
+                                            </div>
 
-                                        <div className="flex-1">
-                                            <h3 className="font-bold text-gray-900 text-base mb-1">
-                                                {item.productId?.name || item.name || `Product #${index + 1}`}
-                                            </h3>
-                                            <p className="text-sm text-gray-500 mb-3">
-                                                {item.productId?.category || item.category || 'Crackers'}
-                                            </p>
-                                            <div className="flex items-center gap-5">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-xs text-gray-500">Qty:</span>
-                                                    <span className="font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded">{item.quantity}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-xs text-gray-500">Price:</span>
-                                                    <span className="font-bold text-gray-900">₹{(item.price || item.productId?.price || 0).toFixed(2)}</span>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-1 truncate sm:whitespace-normal">
+                                                    {item.productId?.name || item.name || `Product #${index + 1}`}
+                                                </h3>
+                                                <p className="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">
+                                                    {item.productId?.category?.main || item.category?.main || (typeof item.productId?.category === 'string' ? item.productId.category : null) || (typeof item.category === 'string' ? item.category : null) || 'Crackers'}
+                                                </p>
+                                                <div className="flex flex-wrap items-center gap-3 sm:gap-5">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider font-semibold">Qty</span>
+                                                        <span className="font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded text-sm">{item.quantity}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider font-semibold">Price</span>
+                                                        <span className="font-bold text-gray-900 text-sm">₹{(item.price || item.productId?.pricing?.selling_price || item.productId?.price || 0).toFixed(2)}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="text-right">
-                                            <p className="text-xs text-gray-500 mb-1.5">Subtotal</p>
-                                            <p className="text-xl font-bold text-orange-600">
-                                                ₹{((item.price || item.productId?.price || 0) * (item.quantity || 1)).toFixed(2)}
+                                        <div className="flex sm:flex-col justify-between items-center sm:items-end pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                                            <p className="text-[10px] sm:text-xs text-gray-500 mb-0 sm:mb-1.5 uppercase tracking-wider font-semibold">Subtotal</p>
+                                            <p className="text-lg sm:text-xl font-black text-orange-600">
+                                                ₹{((item.price || item.productId?.pricing?.selling_price || item.productId?.price || 0) * (item.quantity || 1)).toFixed(2)}
                                             </p>
                                         </div>
                                     </div>

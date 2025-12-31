@@ -6,9 +6,16 @@ const ProductForm = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        price: '',
-        category: '',
-        stock: ''
+        brand: '',
+        net_quantity: '',
+        selling_price: '',
+        mrp: '',
+        gst_percentage: '18',
+        category_main: '',
+        category_sub: '',
+        stock_boxes: '',
+        pieces_per_box: '1',
+        min_order_qty: '1'
     });
 
     const [images, setImages] = useState([]);
@@ -82,13 +89,18 @@ const ProductForm = () => {
             return;
         }
 
-        if (parseFloat(formData.price) <= 0) {
-            setError('Price must be greater than 0');
+        if (!formData.name || !formData.selling_price || !formData.category_main || !formData.net_quantity) {
+            setError('Name, Price, Category, and Net Quantity are required');
             return;
         }
 
-        if (parseInt(formData.stock) < 0) {
-            setError('Stock cannot be negative');
+        if (parseFloat(formData.selling_price) <= 0) {
+            setError('Selling price must be greater than 0');
+            return;
+        }
+
+        if (parseInt(formData.stock_boxes) < 0) {
+            setError('Stock boxes cannot be negative');
             return;
         }
 
@@ -99,9 +111,16 @@ const ProductForm = () => {
             const submitData = new FormData();
             submitData.append('name', formData.name);
             submitData.append('description', formData.description);
-            submitData.append('price', formData.price);
-            submitData.append('category', formData.category);
-            submitData.append('stock', formData.stock);
+            submitData.append('brand', formData.brand);
+            submitData.append('net_quantity', formData.net_quantity);
+            submitData.append('selling_price', formData.selling_price);
+            submitData.append('mrp', formData.mrp);
+            submitData.append('gst_percentage', formData.gst_percentage);
+            submitData.append('category_main', formData.category_main);
+            submitData.append('category_sub', formData.category_sub);
+            submitData.append('stock_boxes', formData.stock_boxes);
+            submitData.append('pieces_per_box', formData.pieces_per_box);
+            submitData.append('min_order_qty', formData.min_order_qty);
 
             // Append all images
             images.forEach((image) => {
@@ -120,9 +139,16 @@ const ProductForm = () => {
             setFormData({
                 name: '',
                 description: '',
-                price: '',
-                category: '',
-                stock: ''
+                brand: '',
+                net_quantity: '',
+                selling_price: '',
+                mrp: '',
+                gst_percentage: '18',
+                category_main: '',
+                category_sub: '',
+                stock_boxes: '',
+                pieces_per_box: '1',
+                min_order_qty: '1'
             });
             setImages([]);
             setImagePreviews([]);
@@ -211,6 +237,10 @@ const ProductForm = () => {
                                                     src={preview}
                                                     alt={`Preview ${index + 1}`}
                                                     className="w-full h-32 object-cover rounded-lg"
+                                                    onError={(e) => {
+                                                        e.target.src = '/images/placeholder.jpg';
+                                                        e.target.onerror = null;
+                                                    }}
                                                 />
                                                 <button
                                                     type="button"
@@ -239,6 +269,10 @@ const ProductForm = () => {
                                             src={imagePreviews[0]}
                                             alt="Preview"
                                             className="w-full h-48 object-cover"
+                                            onError={(e) => {
+                                                e.target.src = '/images/placeholder.jpg';
+                                                e.target.onerror = null;
+                                            }}
                                         />
                                         <div className="p-4">
                                             <h4 className="font-bold text-gray-900 mb-2">{formData.name}</h4>
@@ -381,8 +415,8 @@ const ProductForm = () => {
                                     type="submit"
                                     disabled={loading}
                                     className={`px-6 py-3 text-white font-semibold rounded-lg transition-all shadow-lg flex items-center gap-2 ${loading
-                                            ? 'bg-gray-400 cursor-not-allowed'
-                                            : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40'
+                                        ? 'bg-gray-400 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40'
                                         }`}
                                 >
                                     {loading ? (

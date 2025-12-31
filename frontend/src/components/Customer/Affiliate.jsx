@@ -85,6 +85,10 @@ const Affiliate = () => {
                     src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1600&q=80"
                     alt="Team collaboration"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                        e.target.src = '/images/placeholder.jpg';
+                        e.target.onerror = null;
+                    }}
                 />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                     <div className="text-center text-white px-4">
@@ -123,9 +127,9 @@ const Affiliate = () => {
                         <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
                             <span className="text-white font-bold">1</span>
                         </div>
-                        <h4 
-                        onClick={() => navigate('/seller-register')}
-                        className="text-xl font-bold text-gray-900 mb-3 cursor-pointer">Sign up</h4>
+                        <h4
+                            onClick={() => navigate('/seller-register')}
+                            className="text-xl font-bold text-gray-900 mb-3 cursor-pointer">Sign up</h4>
                         <p className="text-gray-600">
                             Join tens of thousands of creators, publishers and bloggers who are earning with the APK Crackers Associates Program.
                         </p>
@@ -167,6 +171,10 @@ const Affiliate = () => {
                             src={testimonials[currentTestimonial].image}
                             alt="Testimonial"
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                                e.target.src = '/images/placeholder.jpg';
+                                e.target.onerror = null;
+                            }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40 flex items-center">
                             <div className="max-w-2xl px-8 md:px-16 text-white">
@@ -200,8 +208,8 @@ const Affiliate = () => {
                                     key={index}
                                     onClick={() => setCurrentTestimonial(index)}
                                     className={`w-2 h-2 rounded-full transition-all ${index === currentTestimonial
-                                            ? 'bg-white w-8'
-                                            : 'bg-white/50'
+                                        ? 'bg-white w-8'
+                                        : 'bg-white/50'
                                         }`}
                                 />
                             ))}

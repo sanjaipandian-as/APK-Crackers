@@ -22,7 +22,6 @@ const Footer = () => {
         company: [
             { name: 'About Us', path: '/about' },
             { name: 'Contact Us', path: '/contact' },
-            { name: 'Careers', path: '/careers' },
             { name: 'Press & Media', path: '/press' },
             { name: 'Our Stores', path: '/stores' }
         ],
@@ -39,48 +38,40 @@ const Footer = () => {
             { name: 'Protect and Build Your Brand', path: '/BrandRegistry' },
             { name: 'Become an Affiliate', path: '/affiliate' },
             { name: 'Advertise Your Products', path: '/advertise' }
-        ],
-        categories: [
-            { name: 'Sparklers', path: '/category/sparklers' },
-            { name: 'Rockets', path: '/category/rockets' },
-            { name: 'Flower Pots', path: '/category/flowerpots' },
-            { name: 'Chakras', path: '/category/chakras' },
-            { name: 'Gift Boxes', path: '/category/giftboxes' }
         ]
     };
 
     return (
-        <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
-
-
+        <footer className="bg-gray-900 text-white">
             {/* Main Footer Content */}
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
                     {/* Brand Section */}
                     <div className="lg:col-span-1">
-                        <div className="mb-4">
-                            <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                        <div className="mb-6">
+                            <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent mb-3">
                                 APK Crackers
                             </h2>
-                            <p className="text-gray-400 text-sm mt-2">
+                            <p className="text-gray-400 text-sm leading-relaxed">
                                 Your trusted destination for premium quality crackers and fireworks
                             </p>
                         </div>
 
                         {/* Social Media Links */}
-                        <div className="mt-6">
+                        <div>
                             <h4 className="text-sm font-semibold mb-3 text-gray-300">Follow Us</h4>
-                            <div className="flex gap-3">
+                            <div className="flex gap-2">
                                 {[
-                                    { icon: FaFacebookF, color: 'hover:bg-blue-600' },
-                                    { icon: FaTwitter, color: 'hover:bg-sky-500' },
-                                    { icon: FaInstagram, color: 'hover:bg-pink-600' },
-                                    { icon: FaYoutube, color: 'hover:bg-red-600' },
-                                    { icon: FaLinkedinIn, color: 'hover:bg-blue-700' }
+                                    { icon: FaFacebookF, color: 'hover:bg-blue-600', label: 'Facebook' },
+                                    { icon: FaTwitter, color: 'hover:bg-sky-500', label: 'Twitter' },
+                                    { icon: FaInstagram, color: 'hover:bg-pink-600', label: 'Instagram' },
+                                    { icon: FaYoutube, color: 'hover:bg-red-600', label: 'YouTube' },
+                                    { icon: FaLinkedinIn, color: 'hover:bg-blue-700', label: 'LinkedIn' }
                                 ].map((social, index) => (
                                     <button
                                         key={index}
-                                        className={`w-10 h-10 rounded-full bg-gray-800 ${social.color} flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 border border-gray-700 hover:border-transparent cursor-pointer`}
+                                        aria-label={social.label}
+                                        className={`w-9 h-9 rounded-lg bg-gray-800 ${social.color} flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 border border-gray-700 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-orange-500`}
                                     >
                                         <social.icon className="w-4 h-4" />
                                     </button>
@@ -91,13 +82,13 @@ const Footer = () => {
 
                     {/* Company Links */}
                     <div>
-                        <h4 className="text-lg font-bold mb-4 text-white">Company</h4>
-                        <ul className="space-y-2">
+                        <h4 className="text-base font-bold mb-4 text-white">Company</h4>
+                        <ul className="space-y-2.5">
                             {footerLinks.company.map((link, index) => (
                                 <li key={index}>
                                     <button
                                         onClick={() => navigate(link.path)}
-                                        className="text-gray-400 hover:text-orange-500 transition-colors text-sm hover:translate-x-1 inline-block transform duration-200 cursor-pointer"
+                                        className="text-gray-400 hover:text-orange-400 transition-colors text-sm hover:translate-x-1 inline-block transform duration-200 focus:outline-none focus:text-orange-400"
                                     >
                                         {link.name}
                                     </button>
@@ -108,13 +99,13 @@ const Footer = () => {
 
                     {/* Help & Support */}
                     <div>
-                        <h4 className="text-lg font-bold mb-4 text-white cursor-pointer hover:text-orange-500 transition-colors">Help & Support</h4>
-                        <ul className="space-y-2">
+                        <h4 className="text-base font-bold mb-4 text-white">Help & Support</h4>
+                        <ul className="space-y-2.5">
                             {footerLinks.help.map((link, index) => (
                                 <li key={index}>
                                     <button
                                         onClick={() => navigate(link.path)}
-                                        className="text-gray-400 hover:text-orange-500 transition-colors text-sm hover:translate-x-1 inline-block transform duration-200"
+                                        className="text-gray-400 hover:text-orange-400 transition-colors text-sm hover:translate-x-1 inline-block transform duration-200 focus:outline-none focus:text-orange-400"
                                     >
                                         {link.name}
                                     </button>
@@ -123,15 +114,15 @@ const Footer = () => {
                         </ul>
                     </div>
 
-                    {/* Policies */}
+                    {/* Make Money with Us */}
                     <div>
-                        <h4 className="text-lg font-bold mb-4 text-white cursor-pointer hover:text-orange-500 transition-colors">Make Money with Us</h4>
-                        <ul className="space-y-2">
+                        <h4 className="text-base font-bold mb-4 text-white">Make Money with Us</h4>
+                        <ul className="space-y-2.5">
                             {footerLinks.policy.map((link, index) => (
                                 <li key={index}>
                                     <button
                                         onClick={() => navigate(link.path)}
-                                        className="text-gray-400 hover:text-orange-500 transition-colors text-sm hover:translate-x-1 inline-block transform duration-200 cursor-pointer"
+                                        className="text-gray-400 hover:text-orange-400 transition-colors text-sm hover:translate-x-1 inline-block transform duration-200 focus:outline-none focus:text-orange-400"
                                     >
                                         {link.name}
                                     </button>
@@ -142,110 +133,96 @@ const Footer = () => {
 
                     {/* Contact Info */}
                     <div>
-                        <h4 className="text-lg font-bold mb-4 text-white">Contact Us</h4>
+                        <h4 className="text-base font-bold mb-4 text-white">Contact Us</h4>
                         <ul className="space-y-3">
                             <li className="flex items-start gap-3">
-                                <FaMapMarkerAlt className="w-4 h-4 text-orange-500 mt-1 flex-shrink-0" />
-                                <span className="text-gray-400 text-sm">
+                                <FaMapMarkerAlt className="w-4 h-4 text-orange-400 mt-1 flex-shrink-0" />
+                                <span className="text-gray-400 text-sm leading-relaxed">
                                     123 Sivakasi Main Road,<br />
                                     Tamil Nadu, India - 626123
                                 </span>
                             </li>
                             <li className="flex items-center gap-3">
-                                <FaPhone className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                                <a href="tel:+911234567890" className="text-gray-400 hover:text-orange-500 text-sm transition-colors cursor-pointer">
+                                <FaPhone className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                                <a
+                                    href="tel:+911234567890"
+                                    className="text-gray-400 hover:text-orange-400 text-sm transition-colors focus:outline-none focus:text-orange-400"
+                                >
                                     +91 12345 67890
                                 </a>
                             </li>
                             <li className="flex items-center gap-3">
-                                <FaEnvelope className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                                <a href="mailto:support@apkcrackers.com" className="text-gray-400 hover:text-orange-500 text-sm transition-colors cursor-pointer">
+                                <FaEnvelope className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                                <a
+                                    href="mailto:support@apkcrackers.com"
+                                    className="text-gray-400 hover:text-orange-400 text-sm transition-colors focus:outline-none focus:text-orange-400"
+                                >
                                     support@apkcrackers.com
                                 </a>
                             </li>
                         </ul>
-
-                        {/* Download App Section */}
-                        <div className="mt-6">
-                            <h5 className="text-sm font-semibold mb-3 text-gray-300">Download Our App</h5>
-                            <div className="flex flex-col gap-2">
-                                <button className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95 transform">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" className="h-8" />
-                                </button>
-                                <button className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 flex items-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95 transform">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" className="h-8" />
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Divider */}
+            <div className="border-t border-gray-800"></div>
 
             {/* Features Bar */}
-            <div className="border-y border-gray-700 bg-gray-900/50">
+            <div className="bg-gray-800/50">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <FaTruck className="w-6 h-6 text-orange-500" />
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[
+                            { icon: FaTruck, title: 'Free Delivery', desc: 'On every order' },
+                            { icon: FaShieldAlt, title: '100% Safe', desc: 'Certified products' },
+                            { icon: FaCreditCard, title: 'Secure Payment', desc: 'Multiple options' },
+                            { icon: FaHeadset, title: '24/7 Support', desc: 'Always here to help' }
+                        ].map((feature, index) => (
+                            <div key={index} className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <feature.icon className="w-5 h-5 text-orange-400" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-sm text-white">{feature.title}</p>
+                                    <p className="text-xs text-gray-400">{feature.desc}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-semibold text-sm text-white">Free Delivery</p>
-                                <p className="text-xs text-gray-400">On Every orders</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <FaShieldAlt className="w-6 h-6 text-orange-500" />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-sm text-white">100% Safe</p>
-                                <p className="text-xs text-gray-400">Certified products</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <FaCreditCard className="w-6 h-6 text-orange-500" />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-sm text-white">Secure Payment</p>
-                                <p className="text-xs text-gray-400">Multiple options</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <FaHeadset className="w-6 h-6 text-orange-500" />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-sm text-white">24/7 Support</p>
-                                <p className="text-xs text-gray-400">Always here to help</p>
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </div>
 
+            {/* Divider */}
+            <div className="border-t border-gray-800"></div>
+
             {/* Payment Methods */}
-            <div className="border-b border-gray-700 bg-gray-900/30">
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="bg-gray-800/30">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-5">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="text-center sm:text-left">
-                            <p className="text-sm font-semibold text-gray-300 mb-2">We Accept</p>
-                            <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
-                                {['Visa', 'Mastercard', 'PayPal', 'UPI', 'Paytm', 'GPay'].map((method, index) => (
-                                    <div key={index} className="bg-white rounded px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm">
-                                        {method}
+                            <p className="text-xs font-semibold text-gray-300 mb-2">We Accept</p>
+                            <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+                                {[
+                                    { src: 'https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg', alt: 'Visa' },
+                                    { src: 'https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg', alt: 'Mastercard' },
+                                    { src: 'https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg', alt: 'PayPal' },
+                                    { src: 'https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg', alt: 'UPI' },
+                                    { src: 'https://upload.wikimedia.org/wikipedia/commons/2/24/Paytm_Logo_%28standalone%29.svg', alt: 'Paytm' },
+                                    { src: 'https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg', alt: 'Google Pay' }
+                                ].map((payment, index) => (
+                                    <div key={index} className="bg-white rounded px-2 py-1 shadow-sm hover:shadow-md transition-shadow">
+                                        <img src={payment.src} alt={payment.alt} className="h-4 w-auto" />
                                     </div>
                                 ))}
                             </div>
                         </div>
                         <div className="text-center sm:text-right">
-                            <p className="text-sm font-semibold text-gray-300 mb-2 cursor-pointer hover:text-orange-500 transition-colors">Certified By</p>
-                            <div className="flex items-center gap-3 justify-center sm:justify-end">
-                                <div className="bg-white rounded px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm">
+                            <p className="text-xs font-semibold text-gray-300 mb-2">Certified By</p>
+                            <div className="flex items-center gap-2 justify-center sm:justify-end">
+                                <div className="bg-white rounded px-2 py-1 text-xs font-semibold text-gray-800 shadow-sm">
                                     ISO 9001
                                 </div>
-                                <div className="bg-white rounded px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm">
+                                <div className="bg-white rounded px-2 py-1 text-xs font-semibold text-gray-800 shadow-sm">
                                     BIS Certified
                                 </div>
                             </div>
@@ -254,26 +231,16 @@ const Footer = () => {
                 </div>
             </div>
 
+            {/* Divider */}
+            <div className="border-t border-gray-800"></div>
+
             {/* Bottom Bar */}
-            <div className="bg-black/50">
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="bg-gray-950">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-5">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-3">
                         <p className="text-sm text-gray-400 text-center md:text-left">
-                            © {currentYear} <span className="text-orange-500 font-semibold">APK Crackers</span>. All rights reserved.
+                            © {currentYear} <span className="text-orange-400 font-semibold">APK Crackers</span>. All rights reserved.
                         </p>
-                        <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-400">
-                            <button onClick={() => navigate('/sitemap')} className="hover:text-orange-500 transition-colors cursor-pointer">
-                                Sitemap
-                            </button>
-                            <span className="text-gray-700">|</span>
-                            <button onClick={() => navigate('/accessibility')} className="hover:text-orange-500 transition-colors cursor-pointer">
-                                Accessibility
-                            </button>
-                            <span className="text-gray-700">|</span>
-                            <button onClick={() => navigate('/legal')} className="hover:text-orange-500 transition-colors cursor-pointer">
-                                Legal
-                            </button>
-                        </div>
                         <p className="text-xs text-gray-500 text-center md:text-right">
                             Made with ❤️ in India
                         </p>
@@ -283,8 +250,8 @@ const Footer = () => {
 
             {/* Safety Warning */}
             <div className="bg-gradient-to-r from-orange-900/30 to-red-900/30 border-t border-orange-800/50 pb-16 md:pb-0">
-                <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
-                    <p className="text-[10px] sm:text-xs md:text-sm text-center text-orange-200 leading-relaxed">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                    <p className="text-xs text-center text-orange-200 leading-relaxed">
                         ⚠️ <span className="font-semibold">Safety First:</span> Always follow safety guidelines when using crackers and fireworks. Keep away from children. Use in open areas only.
                     </p>
                 </div>

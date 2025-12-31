@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FiPhone, FiMail, FiMapPin, FiClock, FiMessageCircle, FiHelpCircle, FiFileText, FiUsers, FiSend, FiCheck } from 'react-icons/fi';
+import { FiPhone, FiMail, FiMapPin, FiClock, FiMessageCircle, FiHelpCircle, FiFileText, FiUsers, FiSend, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import API from '../../../../api';
 
 const Support = () => {
     const [formData, setFormData] = useState({
@@ -13,29 +14,54 @@ const Support = () => {
 
     const [submitted, setSubmitted] = useState(false);
     const [focusedField, setFocusedField] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [ticketId, setTicketId] = useState('');
 
     const handleChange = (e) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
         });
+        // Clear error when user starts typing
+        if (error) setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Support request:', formData);
-        setSubmitted(true);
-        setTimeout(() => {
-            setSubmitted(false);
-            setFormData({
-                name: '',
-                email: '',
-                phone: '',
-                subject: '',
-                category: 'general',
-                message: ''
-            });
-        }, 3000);
+        setLoading(true);
+        setError('');
+
+        try {
+            const response = await API.post('/support/create', formData);
+
+            // Success
+            setSubmitted(true);
+            setTicketId(response.data.ticket.id);
+
+            // Reset form after 5 seconds
+            setTimeout(() => {
+                setSubmitted(false);
+                setTicketId('');
+                setFormData({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    subject: '',
+                    category: 'general',
+                    message: ''
+                });
+            }, 5000);
+
+        } catch (err) {
+            console.error('Error submitting support ticket:', err);
+            setError(
+                err.response?.data?.message ||
+                'Failed to submit your request. Please try again later.'
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     const contactCards = [
@@ -177,15 +203,41 @@ const Support = () => {
                                 </p>
                             </div>
 
+                            {error && (
+                                <div className="bg-red-50 border-2 border-red-500 rounded-2xl p-6 mb-6">
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <FiAlertCircle className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="text-lg font-bold text-gray-900 mb-1">Error</h3>
+                                            <p className="text-gray-700">{error}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setError('')}
+                                            className="text-red-500 hover:text-red-700 transition-colors"
+                                        >
+                                            <FiAlertCircle className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {submitted ? (
                                 <div className="bg-green-50 border-2 border-green-500 rounded-2xl p-12 text-center">
                                     <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
                                         <FiCheck className="w-12 h-12 text-white" strokeWidth={3} />
                                     </div>
                                     <h3 className="text-2xl font-bold text-gray-900 mb-3">Message sent successfully!</h3>
-                                    <p className="text-gray-600 text-lg">
+                                    <p className="text-gray-600 text-lg mb-4">
                                         Thank you for reaching out. Our team will respond to your inquiry shortly.
                                     </p>
+                                    {ticketId && (
+                                        <div className="inline-block bg-white border-2 border-green-500 rounded-xl px-6 py-3 mt-2">
+                                            <p className="text-sm text-gray-600 mb-1">Your Ticket ID</p>
+                                            <p className="text-lg font-bold text-green-600 font-mono">{ticketId}</p>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -307,10 +359,20 @@ const Support = () => {
 
                                     <button
                                         type="submit"
-                                        className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
+                                        disabled={loading}
+                                        className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                                     >
-                                        <FiSend className="w-5 h-5" />
-                                        Send Message
+                                        {loading ? (
+                                            <>
+                                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                Sending...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <FiSend className="w-5 h-5" />
+                                                Send Message
+                                            </>
+                                        )}
                                     </button>
                                 </form>
                             )}

@@ -64,28 +64,28 @@ const SearchResult = () => {
 
         if (filters.category) {
             filtered = filtered.filter(p =>
-                p.category?.toLowerCase() === filters.category.toLowerCase()
+                (p.category?.main || p.category)?.toLowerCase() === filters.category.toLowerCase()
             );
         }
 
         if (filters.minPrice) {
-            filtered = filtered.filter(p => p.price >= parseFloat(filters.minPrice));
+            filtered = filtered.filter(p => (p.pricing?.selling_price || p.price) >= parseFloat(filters.minPrice));
         }
 
         if (filters.maxPrice) {
-            filtered = filtered.filter(p => p.price <= parseFloat(filters.maxPrice));
+            filtered = filtered.filter(p => (p.pricing?.selling_price || p.price) <= parseFloat(filters.maxPrice));
         }
 
         if (filters.inStock) {
-            filtered = filtered.filter(p => p.stock > 0);
+            filtered = filtered.filter(p => (p.stock_control?.available_pieces || p.stock) > 0);
         }
 
         switch (filters.sortBy) {
             case 'price-low':
-                filtered.sort((a, b) => a.price - b.price);
+                filtered.sort((a, b) => (a.pricing?.selling_price || a.price) - (b.pricing?.selling_price || b.price));
                 break;
             case 'price-high':
-                filtered.sort((a, b) => b.price - a.price);
+                filtered.sort((a, b) => (b.pricing?.selling_price || b.price) - (a.pricing?.selling_price || a.price));
                 break;
             case 'newest':
                 filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -217,7 +217,8 @@ const SearchResult = () => {
     };
 
     const isGiftBox = (category) => {
-        return category?.toLowerCase() === 'gift boxes' || category?.toLowerCase() === 'gift box';
+        const catName = typeof category === 'object' ? category?.main : category;
+        return catName?.toLowerCase() === 'gift boxes' || catName?.toLowerCase() === 'gift box';
     };
 
     const giftBoxProducts = products.filter(p => isGiftBox(p.category));
@@ -327,9 +328,13 @@ const SearchResult = () => {
                 <div className="flex flex-col sm:flex-row">
                     <div className="relative w-full sm:w-48 md:w-56 lg:w-64 h-48 sm:h-48 md:h-56 lg:h-64 flex-shrink-0 bg-gray-50">
                         <img
-                            src={product.images?.[0] || 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000'}
+                            src={product.images?.[0] || '/images/placeholder.jpg'}
                             alt={product.name}
                             className="w-full h-full object-contain p-2 sm:p-3 md:p-4"
+                            onError={(e) => {
+                                e.target.src = '/images/placeholder.jpg';
+                                e.target.onerror = null;
+                            }}
                         />
                         <button
                             onClick={(e) => toggleWishlist(e, product._id)}
@@ -345,7 +350,7 @@ const SearchResult = () => {
                                 />
                             )}
                         </button>
-                        {product.stock <= 0 && (
+                        {(product.stock_control?.available_pieces || product.stock || 0) <= 0 && (
                             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                                 <span className="text-white font-bold text-sm sm:text-base md:text-lg">Out of Stock</span>
                             </div>
@@ -376,13 +381,13 @@ const SearchResult = () => {
                                 <ul className="space-y-1 text-xs sm:text-sm text-gray-700">
                                     <li className="flex items-start">
                                         <span className="text-gray-400 mr-1.5 sm:mr-2">•</span>
-                                        <span>Category: <span className="font-semibold capitalize">{product.category || 'General'}</span></span>
+                                        <span>Category: <span className="font-semibold capitalize">{product.category?.main || product.category || 'General'}</span></span>
                                     </li>
                                     <li className="flex items-start">
                                         <span className="text-gray-400 mr-1.5 sm:mr-2">•</span>
-                                        <span>Stock: <span className={`font-semibold ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-orange-600' : 'text-red-600'
+                                        <span>Stock: <span className={`font-semibold ${(product.stock_control?.available_pieces || product.stock || 0) > 10 ? 'text-green-600' : (product.stock_control?.available_pieces || product.stock || 0) > 0 ? 'text-orange-600' : 'text-red-600'
                                             }`}>
-                                            {product.stock > 0 ? `${product.stock} units available` : 'Out of stock'}
+                                            {(product.stock_control?.available_pieces || product.stock || 0) > 0 ? `${product.stock_control?.available_pieces || product.stock} units available` : 'Out of stock'}
                                         </span></span>
                                     </li>
                                 </ul>
@@ -393,15 +398,15 @@ const SearchResult = () => {
                             <div>
                                 <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2">
                                     <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">
-                                        ₹{product.price?.toFixed(2) || '0.00'}
+                                        ₹{(product.pricing?.selling_price || product.price || 0).toFixed(2)}
                                     </span>
-                                    {product.originalPrice && product.originalPrice > product.price && (
+                                    {(product.pricing?.mrp || product.originalPrice) && (product.pricing?.mrp || product.originalPrice) > (product.pricing?.selling_price || product.price) && (
                                         <>
                                             <span className="text-xs sm:text-sm text-gray-400 line-through">
-                                                ₹{product.originalPrice.toFixed(2)}
+                                                ₹{(product.pricing?.mrp || product.originalPrice).toFixed(2)}
                                             </span>
                                             <span className="text-xs sm:text-sm font-bold text-green-600">
-                                                {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
+                                                {Math.round((((product.pricing?.mrp || product.originalPrice) - (product.pricing?.selling_price || product.price)) / (product.pricing?.mrp || product.originalPrice)) * 100)}% off
                                             </span>
                                         </>
                                     )}
@@ -422,8 +427,8 @@ const SearchResult = () => {
                             ) : (
                                 <button
                                     onClick={(e) => handleAddToCart(e, product._id)}
-                                    disabled={addingToCart === product._id || product.stock <= 0}
-                                    className={`w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-white rounded-lg transition-all shadow-sm hover:shadow-md font-semibold text-sm sm:text-base ${addingToCart === product._id || product.stock <= 0
+                                    disabled={addingToCart === product._id || (product.stock_control?.available_pieces || product.stock || 0) <= 0}
+                                    className={`w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-white rounded-lg transition-all shadow-sm hover:shadow-md font-semibold text-sm sm:text-base ${(addingToCart === product._id || (product.stock_control?.available_pieces || product.stock || 0) <= 0)
                                         ? 'bg-gray-400 cursor-not-allowed'
                                         : 'bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600'
                                         }`}
@@ -460,9 +465,13 @@ const SearchResult = () => {
             >
                 <div className="relative w-full aspect-square overflow-hidden bg-gray-50">
                     <img
-                        src={product.images?.[0] || 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000'}
+                        src={product.images?.[0] || '/images/placeholder.jpg'}
                         alt={product.name}
                         className="w-full h-full object-contain p-3 sm:p-4 group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                            e.target.src = '/images/placeholder.jpg';
+                            e.target.onerror = null;
+                        }}
                     />
                     <button
                         onClick={(e) => toggleWishlist(e, product._id)}
@@ -501,14 +510,14 @@ const SearchResult = () => {
                         <div>
                             <p className="text-xs text-gray-500 mb-1">Category</p>
                             <p className="text-sm xl:text-base font-bold text-gray-900 capitalize truncate">
-                                {product.category || 'General'}
+                                {product.category?.main || product.category || 'General'}
                             </p>
                         </div>
                         <div className="text-right">
                             <p className="text-xs text-gray-500 mb-1">Stock</p>
-                            <p className={`text-sm xl:text-base font-bold ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-orange-600' : 'text-red-600'
+                            <p className={`text-sm xl:text-base font-bold ${(product.stock_control?.available_pieces || product.stock || 0) > 10 ? 'text-green-600' : (product.stock_control?.available_pieces || product.stock || 0) > 0 ? 'text-orange-600' : 'text-red-600'
                                 }`}>
-                                {product.stock > 0 ? `${product.stock} units` : 'Out of stock'}
+                                {(product.stock_control?.available_pieces || product.stock || 0) > 0 ? `${product.stock_control?.available_pieces || product.stock} units` : 'Out of stock'}
                             </p>
                         </div>
                     </div>
@@ -516,17 +525,17 @@ const SearchResult = () => {
                     <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
                         <div className="flex flex-col">
                             <span className="text-xl xl:text-2xl font-bold text-gray-900">
-                                ₹{product.price?.toFixed(2) || '0.00'}
+                                ₹{(product.pricing?.selling_price || product.price || 0).toFixed(2)}
                             </span>
-                            {product.originalPrice && product.originalPrice > product.price && (
+                            {(product.pricing?.mrp || product.originalPrice) && (product.pricing?.mrp || product.originalPrice) > (product.pricing?.selling_price || product.price) && (
                                 <span className="text-sm text-gray-400 line-through">
-                                    ₹{product.originalPrice.toFixed(2)}
+                                    ₹{(product.pricing?.mrp || product.originalPrice).toFixed(2)}
                                 </span>
                             )}
                         </div>
-                        {product.originalPrice && product.originalPrice > product.price && (
+                        {(product.pricing?.mrp || product.originalPrice) && (product.pricing?.mrp || product.originalPrice) > (product.pricing?.selling_price || product.price) && (
                             <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">
-                                {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                                {Math.round((((product.pricing?.mrp || product.originalPrice) - (product.pricing?.selling_price || product.price)) / (product.pricing?.mrp || product.originalPrice)) * 100)}% OFF
                             </div>
                         )}
                     </div>
@@ -544,8 +553,8 @@ const SearchResult = () => {
                     ) : (
                         <button
                             onClick={(e) => handleAddToCart(e, product._id)}
-                            disabled={addingToCart === product._id || product.stock <= 0}
-                            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 xl:py-3 text-white rounded-lg transition-all shadow-sm hover:shadow-md font-semibold text-sm ${addingToCart === product._id || product.stock <= 0
+                            disabled={addingToCart === product._id || (product.stock_control?.available_pieces || product.stock || 0) <= 0}
+                            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 xl:py-3 text-white rounded-lg transition-all shadow-sm hover:shadow-md font-semibold text-sm ${addingToCart === product._id || (product.stock_control?.available_pieces || product.stock || 0) <= 0
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'
                                 }`}

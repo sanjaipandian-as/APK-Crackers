@@ -244,7 +244,7 @@ if echo "$SEARCH_RESPONSE" | grep -q "\["; then
 else
     print_result 1 "Search products"
 fi
-echo ""
+echo ""s
 
 # =========================
 # 1️⃣1️⃣ CART & WISHLIST

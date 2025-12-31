@@ -70,7 +70,7 @@ const AdminAllProducts = () => {
         if (searchTerm) {
             filtered = filtered.filter(p =>
                 p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (typeof p.category === 'object' ? p.category?.main : p.category)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 p.sellerId?.businessName?.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
@@ -265,11 +265,17 @@ const AdminAllProducts = () => {
                                                                     src={product.images[0]}
                                                                     alt={product.name}
                                                                     className="w-full h-full object-cover"
+                                                                    onError={(e) => {
+                                                                        e.target.src = '/images/placeholder.jpg';
+                                                                        e.target.onerror = null;
+                                                                    }}
                                                                 />
                                                             ) : (
-                                                                <div className="w-full h-full flex items-center justify-center">
-                                                                    <FaBox className="text-gray-400" />
-                                                                </div>
+                                                                <img
+                                                                    src="/images/placeholder.jpg"
+                                                                    alt="No Image"
+                                                                    className="w-full h-full object-cover"
+                                                                />
                                                             )}
                                                         </div>
                                                         <div className="min-w-0">
@@ -297,23 +303,23 @@ const AdminAllProducts = () => {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-                                                        {product.category}
+                                                        {product.category?.main || product.category || 'N/A'}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-1 text-sm font-semibold text-gray-900">
                                                         <FaRupeeSign className="w-3 h-3" />
-                                                        {product.price.toLocaleString('en-IN')}
+                                                        {(product.pricing?.selling_price || product.price || 0).toLocaleString('en-IN')}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${product.stock > 10
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : product.stock > 0
-                                                                ? 'bg-yellow-100 text-yellow-700'
-                                                                : 'bg-red-100 text-red-700'
+                                                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${(product.stock_control?.available_pieces || product.stock || 0) > 10
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : (product.stock_control?.available_pieces || product.stock || 0) > 0
+                                                            ? 'bg-yellow-100 text-yellow-700'
+                                                            : 'bg-red-100 text-red-700'
                                                         }`}>
-                                                        {product.stock} units
+                                                        {product.stock_control?.available_pieces || product.stock || 0} units
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">

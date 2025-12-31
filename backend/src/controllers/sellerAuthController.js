@@ -18,48 +18,43 @@ export const registerSeller = async (req, res) => {
   try {
     console.log("📝 Registration request received:", req.body);
 
-    const { name, email, phone, password, businessName, businessType, businessAddress } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      password,
+      businessName,
+      businessType,
+      businessAddress
+    } = req.body;
 
-    // Validate required fields
+    const { pincode, state, city, addressLine } = businessAddress || {};
+
+    // ✅ Validation
     if (
-  !name ||
-  !email ||
-  !phone ||
-  !password ||
-  !businessName ||
-  !businessType ||
-  !businessAddress ||
-  !pincode ||
-  !state ||
-  !city ||
-  !addressLine
-) {
-  console.log("❌ Missing required fields");
-  return res.status(400).json({
-    message: "All fields are required",
-    missing: {
-      name: !name,
-      email: !email,
-      phone: !phone,
-      password: !password,
-      businessName: !businessName,
-      businessType: !businessType,
-      businessAddress: {
-        pincode: !pincode,
-        state: !state,
-        city: !city,
-        addressLine: !addressLine,
-      },
-    },
-  });
-}
-
+      !name ||
+      !email ||
+      !phone ||
+      !password ||
+      !businessName ||
+      !businessType ||
+      !businessAddress ||
+      !pincode ||
+      !state ||
+      !city ||
+      !addressLine
+    ) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
 
     // Check if seller already exists
     const exists = await Seller.findOne({ email });
     if (exists) {
-      console.log("❌ Seller already exists:", email);
-      return res.status(400).json({ message: "Seller with this email already exists" });
+      return res.status(400).json({
+        message: "Seller with this email already exists"
+      });
     }
 
     const hashed = await bcrypt.hash(password, 10);
@@ -73,17 +68,15 @@ export const registerSeller = async (req, res) => {
       businessType,
       businessAddress,
       kycStatus: "not_submitted",
-      status: "active"                // ⭐ default active
+      status: "active",
     });
-
-    console.log("✅ Seller created successfully:", seller.email);
 
     const token = generateToken(seller._id);
 
-    res.json({
+    res.status(201).json({
       message: "Seller registered successfully",
       token,
-      seller
+      seller,
     });
 
   } catch (err) {

@@ -19,7 +19,7 @@ export const createOrder = async (req, res) => {
     const orderItems = cart.items.map((item) => ({
       productId: item.productId._id,
       quantity: item.quantity,
-      price: item.productId.price,
+      price: item.productId.price || 0,
     }));
 
     // Calculate total price
@@ -34,10 +34,17 @@ export const createOrder = async (req, res) => {
     // Deduct stock
     for (const item of cart.items) {
       const product = await Product.findById(item.productId._id);
-      if (product.stock < item.quantity) {
-        return res.status(400).json({ message: "Insufficient stock for a product" });
+      const availableStock = product.stock_control?.available_pieces ?? product.stock ?? 0;
+
+      if (availableStock < item.quantity) {
+        return res.status(400).json({ message: `Insufficient stock for product: ${product.name}` });
       }
-      product.stock -= item.quantity;
+
+      if (product.stock_control) {
+        product.stock_control.available_pieces -= item.quantity;
+      } else {
+        product.stock -= item.quantity;
+      }
       await product.save();
     }
 
@@ -77,9 +84,11 @@ export const createOrder = async (req, res) => {
       { $set: { items: [] } }
     );
 
+    const populatedOrder = await Order.findById(order._id).populate("items.productId");
+
     res.json({
       message: "Order created successfully. Proceed to payment.",
-      order
+      order: populatedOrder
     });
 
   } catch (err) {
@@ -111,9 +120,9 @@ export const getMyOrders = async (req, res) => {
     });
 
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Failed to fetch orders",
-      error: err.message 
+      error: err.message
     });
   }
 };

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaShoppingCart, FaTrash, FaArrowLeft, FaHeartBroken, FaTimes, FaCheckCircle, FaTag } from 'react-icons/fa';
+import { FaShoppingCart, FaTrash, FaArrowLeft, FaHeartBroken, FaTimes, FaCheckCircle, FaTag, FaStar } from 'react-icons/fa';
 import { BsFillBagHeartFill } from 'react-icons/bs';
 import API from '../../../api';
 
@@ -202,7 +202,7 @@ const Wishlist = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 flex flex-col">
             {/* Header - Full Width */}
-            <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+            {/* <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
                 <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6">
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0">
@@ -232,7 +232,7 @@ const Wishlist = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             {error && (
                 <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 mt-3 sm:mt-4 md:mt-6">
@@ -244,13 +244,13 @@ const Wishlist = () => {
             )}
 
             {/* Wishlist Grid */}
-            <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-8 flex-1 flex items-center justify-center md:items-start">
-                <div className="w-full max-w-7xl">
+            <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-8 pb-20 flex-1 flex items-center justify-center md:items-start">
+                <div className="w-full max-w-8xl">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                         {validWishlistItems.map((item) => (
                             <div
                                 key={item.productId._id}
-                                className="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all border-2 border-gray-100 hover:border-orange-200 group relative"
+                                className="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all border-2 border-gray-100 group relative"
                             >
                                 {/* Product Image */}
                                 <div
@@ -258,10 +258,14 @@ const Wishlist = () => {
                                     className="relative w-full aspect-[4/3] overflow-hidden cursor-pointer bg-gradient-to-br from-gray-50 to-gray-100"
                                 >
                                     <img
-                                        src={item.productId.images?.[0] || 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000'}
+                                        src={item.productId.images?.[0] || '/images/placeholder.jpg'}
                                         alt={item.productId.name}
                                         loading="lazy"
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                        onError={(e) => {
+                                            e.target.src = '/images/placeholder.jpg';
+                                            e.target.onerror = null;
+                                        }}
                                     />
 
                                     {/* Gradient Overlay on Hover */}
@@ -284,7 +288,7 @@ const Wishlist = () => {
                                     </button>
 
                                     {/* Stock Badge */}
-                                    {item.productId.stock <= 0 && (
+                                    {(item.productId.stock_control?.available_pieces || item.productId.stock || 0) <= 0 && (
                                         <div className="absolute top-2 sm:top-3 left-2 sm:left-3 px-2 sm:px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
                                             Out of Stock
                                         </div>
@@ -292,62 +296,71 @@ const Wishlist = () => {
                                 </div>
 
                                 {/* Product Info */}
-                                <div className="p-3 sm:p-4">
-                                    <h3
-                                        onClick={() => navigate(`/product/${item.productId._id}`)}
-                                        className="text-sm sm:text-base font-bold text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-red-600 transition-colors min-h-[2.5rem] sm:min-h-[3rem]"
-                                    >
-                                        {item.productId.name}
-                                    </h3>
-
-                                    <div className="flex items-center justify-between mb-3 gap-2">
-                                        <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-lg font-bold capitalize truncate">
-                                            {item.productId.category || 'General'}
-                                        </span>
-                                        <span className={`text-xs font-bold whitespace-nowrap ${item.productId.stock > 10 ? 'text-green-600' :
-                                            item.productId.stock > 0 ? 'text-orange-600' : 'text-red-600'
-                                            }`}>
-                                            {item.productId.stock > 0 ? `${item.productId.stock} left` : 'Out'}
-                                        </span>
+                                <div className="p-4 space-y-4">
+                                    <div className="flex justify-between items-start gap-2">
+                                        <h3
+                                            onClick={() => navigate(`/product/${item.productId._id}`)}
+                                            className="text-lg font-bold text-gray-900 group-hover:text-orange-600 transition-colors cursor-pointer line-clamp-1"
+                                        >
+                                            {item.productId.name}
+                                        </h3>
+                                        <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-md flex-shrink-0">
+                                            <FaStar className="w-3 h-3 text-yellow-500" />
+                                            <span className="text-sm font-bold text-gray-700">4.2</span>
+                                        </div>
                                     </div>
 
-                                    <div className="flex items-center justify-between pt-3 border-t border-gray-100 gap-2">
-                                        <div>
-                                            <p className="text-xs text-gray-500">Price</p>
-                                            <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent">
-                                                ₹{item.productId.price?.toFixed(2) || '0.00'}
-                                            </span>
+                                    <div className="flex justify-between items-end border-b border-gray-100 pb-3">
+                                        <div className="space-y-0.5 min-w-0">
+                                            <p className="text-xs text-gray-400 font-medium">Category</p>
+                                            <p className="text-sm font-extrabold text-gray-800 truncate">
+                                                {item.productId.category?.main || (typeof item.productId.category === 'string' ? item.productId.category : 'Crackers')}
+                                            </p>
                                         </div>
+                                        <div className="space-y-0.5 text-right flex-shrink-0">
+                                            <p className="text-xs text-gray-400 font-medium">Brand</p>
+                                            <p className="text-sm font-extrabold text-orange-500">
+                                                {item.productId.brand || 'Standard'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between pt-2">
+                                        <div className="flex flex-col">
+                                            <span className="text-2xl font-black text-gray-900 leading-none">
+                                                ₹{(item.productId.pricing?.selling_price || item.productId.price || 0).toFixed(2)}
+                                            </span>
+                                            {(item.productId.pricing?.mrp || item.productId.originalPrice) && (
+                                                <span className="text-sm text-gray-400 line-through mt-1">
+                                                    ₹{(item.productId.pricing?.mrp || item.productId.originalPrice).toFixed(2)}
+                                                </span>
+                                            )}
+                                        </div>
+
                                         {(() => {
                                             const isInCart = cartItems.some(cartItem =>
                                                 (cartItem.productId?._id || cartItem.productId) === item.productId._id
                                             );
-
                                             return (
                                                 <button
                                                     onClick={() => addToCart(item.productId)}
-                                                    disabled={addingToCart === item.productId._id || item.productId.stock <= 0}
-                                                    className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${addingToCart === item.productId._id || item.productId.stock <= 0
+                                                    disabled={addingToCart === item.productId._id || (item.productId.stock_control?.available_pieces || item.productId.stock || 0) <= 0}
+                                                    className={`px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md hover:shadow-lg transform active:scale-95 ${addingToCart === item.productId._id || (item.productId.stock_control?.available_pieces || item.productId.stock || 0) <= 0
                                                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                                        : 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white hover:from-orange-600 hover:to-yellow-600 shadow-md hover:shadow-lg hover:scale-105 transform'
+                                                        : 'bg-gradient-to-r from-orange-400 to-orange-500 text-white hover:from-orange-500 hover:to-orange-600'
                                                         }`}
                                                 >
                                                     {addingToCart === item.productId._id ? (
-                                                        <>
-                                                            <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white"></div>
-                                                            <span className="hidden sm:inline">Adding...</span>
-                                                        </>
+                                                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                                                     ) : isInCart ? (
                                                         <>
-                                                            <FaCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                            <span className="hidden sm:inline">Go to Cart</span>
-                                                            <span className="sm:hidden">Cart</span>
+                                                            <FaCheckCircle className="w-5 h-5 text-white" />
+                                                            <span>Go to Cart</span>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <FaShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                            <span className="hidden sm:inline">Add to Cart</span>
-                                                            <span className="sm:hidden">Add</span>
+                                                            <FaShoppingCart className="w-5 h-5 text-white" />
+                                                            <span>Add</span>
                                                         </>
                                                     )}
                                                 </button>

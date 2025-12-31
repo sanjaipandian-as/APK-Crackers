@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FaSearch, FaBell, FaUser, FaSignOutAlt, FaInfinity, FaBars, FaTimes } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import API from '../../../api';
 
 const Searchbar = () => {
@@ -121,8 +122,27 @@ const Searchbar = () => {
         const token = sessionStorage.getItem('token') || localStorage.getItem('token');
         const user = sessionStorage.getItem('user') || localStorage.getItem('user');
         const role = sessionStorage.getItem('userRole') || localStorage.getItem('userRole');
+        const loginTime = sessionStorage.getItem('loginTime') || localStorage.getItem('loginTime');
 
         if (token && user) {
+            // Check if 24 hours have passed since login
+            if (loginTime) {
+                const currentTime = new Date().getTime();
+                const loginTimestamp = parseInt(loginTime);
+                const hoursPassed = (currentTime - loginTimestamp) / (1000 * 60 * 60);
+
+                // If more than 24 hours have passed, automatically logout
+                if (hoursPassed >= 24) {
+                    console.log('Session expired after 24 hours. Logging out...');
+                    handleLogout();
+                    toast.info('Your session has expired. Please login again.', {
+                        position: "top-center",
+                        autoClose: 5000,
+                    });
+                    return;
+                }
+            }
+
             setIsLoggedIn(true);
             setUserRole(role || 'customer');
             try {
@@ -134,6 +154,30 @@ const Searchbar = () => {
                 console.error('Error parsing user data:', error);
             }
         }
+
+        // Set up interval to check session expiry every 5 minutes
+        const checkSessionInterval = setInterval(() => {
+            const loginTime = sessionStorage.getItem('loginTime') || localStorage.getItem('loginTime');
+            const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+
+            if (token && loginTime) {
+                const currentTime = new Date().getTime();
+                const loginTimestamp = parseInt(loginTime);
+                const hoursPassed = (currentTime - loginTimestamp) / (1000 * 60 * 60);
+
+                if (hoursPassed >= 24) {
+                    console.log('Session expired after 24 hours. Logging out...');
+                    handleLogout();
+                    toast.info('Your session has expired. Please login again.', {
+                        position: "top-center",
+                        autoClose: 5000,
+                    });
+                }
+            }
+        }, 5 * 60 * 1000); // Check every 5 minutes
+
+        // Cleanup interval on component unmount
+        return () => clearInterval(checkSessionInterval);
     }, []);
 
     // Update document title based on current route
@@ -240,7 +284,6 @@ const Searchbar = () => {
         }
 
         document.title = `${pageTitle} - APK Crackers`;
-        console.log('✅ Page Title Updated:', pageTitle, '| Route:', path);
     }, [location.pathname]);
 
     // Close suggestions when clicking outside

@@ -17,8 +17,9 @@ import {
     FaFire
 } from 'react-icons/fa';
 import { BsFillBagHeartFill } from 'react-icons/bs';
+import API from '../../../api';
 
-const Sidebar = () => {
+const Sidebar = ({ onFiltersChange, showFilter = true }) => {
     const navigate = useNavigate();
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [customPrice, setCustomPrice] = useState(false);
@@ -39,8 +40,78 @@ const Sidebar = () => {
     const [selectedAges, setSelectedAges] = useState({});
     const [selectedTags, setSelectedTags] = useState({});
 
+
+
+    // Dynamic filter options from backend
+    const [filterOptions, setFilterOptions] = useState({
+        brands: [],
+        priceRanges: [],
+        ageCategories: [],
+        tags: [],
+        priceRange: { min: 0, max: 50000, average: 25000 },
+        specialFilters: {
+            ecoFriendly: { available: false, count: 0 },
+            greenCracker: { available: false, count: 0 }
+        }
+    });
+    const [loadingOptions, setLoadingOptions] = useState(true);
+
+    // Fetch filter options from backend
     useEffect(() => {
-        // Check if seller is logged in
+        const fetchFilterOptions = async () => {
+            try {
+                const response = await API.get('/products/customer/filter-options');
+                setFilterOptions(response.data);
+                // Set initial price range max
+                setPriceRange([0, response.data.priceRange.max]);
+            } catch (error) {
+                console.error('Error fetching filter options:', error);
+                // Use fallback data
+                setFilterOptions({
+                    brands: ['Standard Fireworks', 'Ayyan Fireworks', 'Cock Brand', 'Sony Fireworks', 'Celebration Crackers'],
+                    priceRanges: [
+                        { label: 'All Price', count: 0 },
+                        { label: 'Below ₹500', count: 0 },
+                        { label: '₹1000 - ₹5000', count: 0 },
+                        { label: '₹5000 - ₹10000', count: 0 }
+                    ],
+                    ageCategories: [
+                        { label: 'Kids (5-12 years)', value: 'kids', available: true },
+                        { label: 'Teenagers (13-17 years)', value: 'teens', available: true },
+                        { label: 'Adults (18-60 years)', value: 'adults', available: true },
+                        { label: 'Elders (60+ years)', value: 'elders', available: true }
+                    ],
+                    tags: [
+                        { key: 'Thunder', key_slug: 'thunder' },
+                        { key: 'Sound', key_slug: 'sound' },
+                        { key: 'Blast', key_slug: 'blast' }
+                    ],
+                    priceRange: { min: 0, max: 50000, average: 25000 },
+                    specialFilters: {
+                        ecoFriendly: { available: true, count: 0 },
+                        greenCracker: { available: true, count: 0 }
+                    }
+                });
+            } finally {
+                setLoadingOptions(false);
+            }
+        };
+
+        fetchFilterOptions();
+    }, []);
+
+    // Derived data for backward compatibility
+    const priceOptions = filterOptions.priceRanges;
+    const crackerBrands = filterOptions.brands;
+    const ageCategories = filterOptions.ageCategories;
+    const tags = (filterOptions.tags || []).map(tag => ({
+        label: tag.key,
+        value: tag.key_slug,
+        emoji: tag.key_slug === 'thunder' ? '⚡' : tag.key_slug === 'sound' ? '🔊' : '💥'
+    }));
+
+    // Check seller login status
+    useEffect(() => {
         const checkSellerLogin = () => {
             const userRole = localStorage.getItem('userRole');
             const token = localStorage.getItem('token');
@@ -48,8 +119,6 @@ const Sidebar = () => {
         };
 
         checkSellerLogin();
-
-
         window.addEventListener('storage', checkSellerLogin);
 
         return () => window.removeEventListener('storage', checkSellerLogin);
@@ -59,41 +128,13 @@ const Sidebar = () => {
         if (isSellerLoggedIn) {
             navigate('/seller-home');
         } else {
-            navigate('/seller-login');
+            navigate('/seller-register');
         }
     };
 
     const toggleFilter = () => {
         setIsFilterOpen(!isFilterOpen);
     };
-
-    const priceOptions = [
-        { label: 'All Price', count: 'EX: 800' },
-        { label: 'Below ₹10,000', count: 'EX: 800' },
-        { label: '₹10,000 - ₹25,000', count: 'EX: 800' },
-        { label: '₹25,000 - ₹50,000', count: 'EX: 800' },
-    ];
-
-    const crackerBrands = [
-        'Standard Fireworks',
-        'Ayyan Fireworks',
-        'Cock Brand',
-        'Sony Fireworks',
-        'Celebration Crackers'
-    ];
-
-    const ageCategories = [
-        { label: 'Kids (5-12 years)', value: 'kids' },
-        { label: 'Teenagers (13-17 years)', value: 'teens' },
-        { label: 'Adults (18-60 years)', value: 'adults' },
-        { label: 'Elders (60+ years)', value: 'elders' }
-    ];
-
-    const tags = [
-        { label: 'Thunder', emoji: '⚡', value: 'thunder' },
-        { label: 'Sound', emoji: '🔊', value: 'sound' },
-        { label: 'Blast', emoji: '💥', value: 'blast' }
-    ];
 
     const handlePriceChange = (index) => {
         if (index === 0) {
@@ -126,74 +167,158 @@ const Sidebar = () => {
         setSelectedRatings(prev => ({ ...prev, [rating]: !prev[rating] }));
     };
 
+    const applyFilters = () => {
+        if (!onFiltersChange) return;
+
+        // Calculate price range from selected checkboxes if not using custom price
+        let effectivePriceRange = [...priceRange];
+        const activePriceIndices = Object.keys(selectedPrices)
+            .filter(key => selectedPrices[key] && parseInt(key) !== 0);
+
+        if (customPrice) {
+            effectivePriceRange = priceRange;
+        } else if (activePriceIndices.length > 0) {
+            let min = Infinity;
+            let max = -Infinity;
+            activePriceIndices.forEach(index => {
+                const option = priceOptions[index];
+                if (option) {
+                    if (option.min !== undefined) min = Math.min(min, option.min);
+                    if (option.max !== undefined && option.max !== null) {
+                        max = Math.max(max, option.max);
+                    } else if (option.max === null) {
+                        max = Math.max(max, filterOptions.priceRange.max);
+                    }
+                }
+            });
+            if (min === Infinity) min = 0;
+            if (max === -Infinity) max = filterOptions.priceRange.max;
+            effectivePriceRange = [min, max];
+        } else if (selectedPrices[0]) {
+            effectivePriceRange = [0, filterOptions.priceRange.max];
+        }
+
+        // Collect selected brands
+        const brands = Object.keys(selectedBrands)
+            .filter(key => selectedBrands[key])
+            .map(key => crackerBrands[key]);
+
+        // Collect selected age categories
+        const ages = Object.keys(selectedAges)
+            .filter(key => selectedAges[key])
+            .map(key => ageCategories[key].value);
+
+        // Collect selected tags
+        const tagsArray = Object.keys(selectedTags)
+            .filter(key => selectedTags[key])
+            .map(key => tags[key].value);
+
+        // Collect selected ratings
+        const ratings = Object.keys(selectedRatings)
+            .filter(key => selectedRatings[key])
+            .map(key => parseInt(key));
+
+        // Build filter object
+        const filters = {
+            priceRange: effectivePriceRange,
+            selectedBrands: brands,
+            selectedAges: ages,
+            selectedTags: tagsArray,
+            selectedRatings: ratings,
+            isEcoFriendly: isEcoFriendly,
+            isGreenCrackers: isGreenCrackers
+        };
+
+        onFiltersChange(filters);
+
+        // Close filter on mobile after applying
+        if (window.innerWidth < 768) {
+            setIsFilterOpen(false);
+        }
+    };
+
     const resetFilters = () => {
         setIsEcoFriendly(false);
         setIsGreenCrackers(false);
         setCustomPrice(false);
-        setPriceRange([0, 0]);
+        const maxPrice = filterOptions.priceRange?.max || 50000;
+        setPriceRange([0, maxPrice]);
         setSelectedPrices({ 0: true });
         setSelectedBrands({});
         setSelectedAges({});
         setSelectedTags({});
         setSelectedRatings({});
+
+        // Reset parent filters
+        if (onFiltersChange) {
+            onFiltersChange({
+                priceRange: [0, maxPrice],
+                selectedBrands: [],
+                selectedAges: [],
+                selectedTags: [],
+                selectedRatings: [],
+                isEcoFriendly: false,
+                isGreenCrackers: false
+            });
+        }
     };
 
-    return (
-        <>
-            <div className="hidden md:flex h-screen">
-                <div className="w-20 bg-white border-r border-gray-100 flex flex-col items-center py-6 shadow-sm">
-                    {/* Logo/Brand Section */}
-                    <div className="mb-8">
-                        <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
-                            <FaInfinity className="w-6 h-6 text-white" />
+    return <>
+        <div className="hidden md:flex h-screen">
+            <div className="w-20 bg-white border-r border-gray-100 flex flex-col items-center py-6 shadow-sm">
+                {/* Logo/Brand Section */}
+                <div className="mb-8">
+                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <FaInfinity className="w-6 h-6 text-white" />
+                    </div>
+                </div>
+
+                {/* Navigation Icons */}
+                <div className="flex flex-col items-center gap-4 flex-1">
+                    {/* Home */}
+                    <div className="relative group">
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-14 h-14 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95"
+                        >
+                            <FaHome className="w-6 h-6 text-gray-700 group-hover:text-orange-600 transition-colors" />
+                        </button>
+                        <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
+                            Home
+                            <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
                         </div>
                     </div>
 
-                    {/* Navigation Icons */}
-                    <div className="flex flex-col items-center gap-4 flex-1">
-                        {/* Home */}
-                        <div className="relative group">
-                            <button
-                                onClick={() => navigate('/')}
-                                className="w-14 h-14 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95"
-                            >
-                                <FaHome className="w-6 h-6 text-gray-700 group-hover:text-orange-600 transition-colors" />
-                            </button>
-                            <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
-                                Home
-                                <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
-                            </div>
+                    {/* Cart */}
+                    <div className="relative group">
+                        <button
+                            onClick={() => navigate('/Cart')}
+                            className="w-14 h-14 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95"
+                        >
+                            <FaShoppingBag className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
+                        </button>
+                        <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
+                            Cart
+                            <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
                         </div>
+                    </div>
 
-                        {/* Cart */}
-                        <div className="relative group">
-                            <button
-                                onClick={() => navigate('/Cart')}
-                                className="w-14 h-14 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95"
-                            >
-                                <FaShoppingBag className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
-                            </button>
-                            <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
-                                Cart
-                                <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
-                            </div>
+                    {/* Wishlist */}
+                    <div className="relative group">
+                        <button
+                            onClick={() => navigate('/Wishlist')}
+                            className="w-14 h-14 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95"
+                        >
+                            <BsFillBagHeartFill className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
+                        </button>
+                        <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
+                            Wishlist
+                            <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
                         </div>
+                    </div>
 
-                        {/* Wishlist */}
-                        <div className="relative group">
-                            <button
-                                onClick={() => navigate('/Wishlist')}
-                                className="w-14 h-14 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95"
-                            >
-                                <BsFillBagHeartFill className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
-                            </button>
-                            <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
-                                Wishlist
-                                <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
-                            </div>
-                        </div>
-
-                        {/* Filter */}
+                    {/* Filter */}
+                    {showFilter && (
                         <div className="relative group">
                             <button
                                 onClick={toggleFilter}
@@ -209,42 +334,44 @@ const Sidebar = () => {
                                 <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
                             </div>
                         </div>
+                    )}
 
-                        {/* Settings */}
-                        <div className="relative group">
-                            <button
-                                onClick={() => navigate('/Settings')}
-                                className="w-14 h-14 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95"
-                            >
-                                <FaCog className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
-                            </button>
-                            <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
-                                Settings
-                                <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Bottom Section - Business Account */}
-                    <div className="mt-auto">
-                        <div className="relative group">
-                            <button
-                                onClick={handleBusinessAccountClick}
-                                className={`w-14 h-14 border-2 rounded-2xl flex items-center justify-center transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95 ${isSellerLoggedIn
-                                    ? 'bg-green-50 border-green-500 shadow-md'
-                                    : 'bg-white border-gray-100 hover:border-orange-500 hover:bg-orange-50'
-                                    }`}
-                            >
-                                <FaStore className={`w-5 h-5 transition-colors ${isSellerLoggedIn ? 'text-green-600' : 'text-gray-700 group-hover:text-orange-600'}`} />
-                            </button>
-                            <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
-                                {isSellerLoggedIn ? 'Seller Dashboard' : 'Business Account'}
-                                <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
-                            </div>
+                    {/* Settings */}
+                    <div className="relative group">
+                        <button
+                            onClick={() => navigate('/Settings')}
+                            className="w-14 h-14 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95"
+                        >
+                            <FaCog className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
+                        </button>
+                        <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
+                            Settings
+                            <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
                         </div>
                     </div>
                 </div>
 
+                {/* Bottom Section - Business Account */}
+                <div className="mt-auto">
+                    <div className="relative group">
+                        <button
+                            onClick={handleBusinessAccountClick}
+                            className={`w-14 h-14 border-2 rounded-2xl flex items-center justify-center transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95 ${isSellerLoggedIn
+                                ? 'bg-green-50 border-green-500 shadow-md'
+                                : 'bg-white border-gray-100 hover:border-orange-500 hover:bg-orange-50'
+                                }`}
+                        >
+                            <FaStore className={`w-5 h-5 transition-colors ${isSellerLoggedIn ? 'text-green-600' : 'text-gray-700 group-hover:text-orange-600'}`} />
+                        </button>
+                        <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
+                            {isSellerLoggedIn ? 'Seller Dashboard' : 'Business Account'}
+                            <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {showFilter && (
                 <div
                     className={`bg-white border-r border-gray-200 transition-all duration-300 ease-in-out overflow-y-auto ${isFilterOpen ? 'w-56 md:w-60 lg:w-64 xl:w-72 opacity-100' : 'w-0 opacity-0'
                         }`}
@@ -265,38 +392,44 @@ const Sidebar = () => {
                             <div className="mb-3 md:mb-4 space-y-2">
                                 <button
                                     onClick={() => setIsEcoFriendly(!isEcoFriendly)}
-                                    className="w-full flex items-center gap-2 p-2 rounded-lg border-2 border-gray-200 transition-all cursor-pointer"
+                                    className={`w-full flex items-center gap-2 p-2 rounded-lg border-2 transition-all cursor-pointer ${isEcoFriendly ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white hover:border-green-200'
+                                        }`}
                                 >
                                     <div
-                                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isEcoFriendly ? 'border-green-500' : 'border-gray-300'
+                                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isEcoFriendly ? 'bg-green-500 border-green-500' : 'border-gray-300'
                                             }`}
                                     >
                                         {isEcoFriendly && (
-                                            <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                                            <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                                         )}
                                     </div>
-                                    <span className="text-xs md:text-sm font-medium text-gray-700">🌿 Eco-Friendly</span>
+                                    <span className={`text-xs md:text-sm font-medium ${isEcoFriendly ? 'text-green-700' : 'text-gray-700'}`}>🌿 Eco-Friendly</span>
                                 </button>
 
                                 <button
                                     onClick={() => setIsGreenCrackers(!isGreenCrackers)}
-                                    className="w-full flex items-center gap-2 p-2 rounded-lg border-2 border-gray-200 transition-all cursor-pointer"
+                                    className={`w-full flex items-center gap-2 p-2 rounded-lg border-2 transition-all cursor-pointer ${isGreenCrackers ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-emerald-200'
+                                        }`}
                                 >
                                     <div
-                                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isGreenCrackers ? 'border-emerald-500' : 'border-gray-300'
+                                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isGreenCrackers ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300'
                                             }`}
                                     >
                                         {isGreenCrackers && (
-                                            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
+                                            <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                                         )}
                                     </div>
-                                    <span className="text-xs md:text-sm font-medium text-gray-700">♻️ Green Crackers</span>
+                                    <span className={`text-xs md:text-sm font-medium ${isGreenCrackers ? 'text-emerald-700' : 'text-gray-700'}`}>♻️ Green Crackers</span>
                                 </button>
                             </div>
 
+
+
                             <div className="mb-3 md:mb-4">
                                 <h4 className="text-xs md:text-sm font-semibold text-gray-800 mb-1 md:mb-2">Price Range</h4>
-                                <p className="text-[10px] md:text-xs text-gray-500 mb-2 md:mb-3">The average price is ₹25,000</p>
+                                <p className="text-[10px] md:text-xs text-gray-500 mb-2 md:mb-3">
+                                    The average price is ₹{filterOptions.priceRange.average.toLocaleString('en-IN')}
+                                </p>
 
                                 <div className="space-y-1.5 md:space-y-2 mb-2 md:mb-3">
                                     {priceOptions.map((option, index) => (
@@ -329,26 +462,26 @@ const Sidebar = () => {
                                     <div className="flex justify-between text-[10px] md:text-xs text-gray-700 mb-2">
                                         <span className="font-medium">Price Range</span>
                                         <span className="font-bold text-orange-600 text-xs md:text-sm">
-                                            ₹{priceRange[1].toLocaleString('en-IN')}
+                                            ₹{priceRange[0].toLocaleString('en-IN')} - ₹{priceRange[1].toLocaleString('en-IN')}
                                         </span>
                                     </div>
 
                                     <input
                                         type="range"
                                         min="0"
-                                        max="50000"
+                                        max={filterOptions.priceRange.max}
                                         step="100"
                                         value={priceRange[1]}
                                         onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                                         className="w-full h-2 bg-transparent appearance-none cursor-pointer"
                                         style={{
-                                            background: `linear-gradient(to right, #fb923c 0%, #fb923c ${(priceRange[1] / 50000) * 100
-                                                }%, #e5e7eb ${(priceRange[1] / 50000) * 100}%, #e5e7eb 100%)`,
+                                            background: `linear-gradient(to right, #fb923c 0%, #fb923c ${(priceRange[1] / filterOptions.priceRange.max) * 100
+                                                }%, #e5e7eb ${(priceRange[1] / filterOptions.priceRange.max) * 100}%, #e5e7eb 100%)`,
                                         }}
                                     />
 
                                     <div className="text-[10px] md:text-xs text-gray-600 mt-1.5 text-center font-medium">
-                                        ₹0 - ₹{priceRange[1].toLocaleString('en-IN')} of ₹50,000
+                                        ₹0 - ₹{priceRange[1].toLocaleString('en-IN')} of ₹{filterOptions.priceRange.max.toLocaleString('en-IN')}
                                     </div>
                                 </div>
                             </div>
@@ -467,7 +600,7 @@ const Sidebar = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 md:py-2.5 px-4 md:px-6 rounded-full transition-colors cursor-pointer text-xs md:text-sm">
+                                <button onClick={applyFilters} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 md:py-2.5 px-4 md:px-6 rounded-full transition-colors cursor-pointer text-xs md:text-sm">
                                     Apply Filters
                                 </button>
                                 <button
@@ -480,42 +613,44 @@ const Sidebar = () => {
                         </div>
                     )}
                 </div>
-            </div>
+            )}
+        </div>
 
-            {/* Mobile Bottom Navigation - Desktop Style */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-                <div className="flex items-center justify-around px-2 py-2">
-                    {/* Home */}
-                    <div className="relative group">
-                        <button
-                            onClick={() => navigate('/')}
-                            className="w-12 h-12 bg-white border-2 border-gray-100 rounded-xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer active:scale-95"
-                        >
-                            <FaHome className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
-                        </button>
-                    </div>
+        {/* Mobile Bottom Navigation - Desktop Style */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+            <div className="flex items-center justify-around px-2 py-2">
+                {/* Home */}
+                <div className="relative group">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="w-12 h-12 bg-white border-2 border-gray-100 rounded-xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer active:scale-95"
+                    >
+                        <FaHome className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
+                    </button>
+                </div>
 
-                    {/* Cart */}
-                    <div className="relative group">
-                        <button
-                            onClick={() => navigate('/Cart')}
-                            className="w-12 h-12 bg-white border-2 border-gray-100 rounded-xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer active:scale-95"
-                        >
-                            <FaShoppingBag className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
-                        </button>
-                    </div>
+                {/* Cart */}
+                <div className="relative group">
+                    <button
+                        onClick={() => navigate('/Cart')}
+                        className="w-12 h-12 bg-white border-2 border-gray-100 rounded-xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer active:scale-95"
+                    >
+                        <FaShoppingBag className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
+                    </button>
+                </div>
 
-                    {/* Wishlist */}
-                    <div className="relative group">
-                        <button
-                            onClick={() => navigate('/Wishlist')}
-                            className="w-12 h-12 bg-white border-2 border-gray-100 rounded-xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer active:scale-95"
-                        >
-                            <BsFillBagHeartFill className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
-                        </button>
-                    </div>
+                {/* Wishlist */}
+                <div className="relative group">
+                    <button
+                        onClick={() => navigate('/Wishlist')}
+                        className="w-12 h-12 bg-white border-2 border-gray-100 rounded-xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer active:scale-95"
+                    >
+                        <BsFillBagHeartFill className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
+                    </button>
+                </div>
 
-                    {/* Filter */}
+                {/* Filter */}
+                {showFilter && (
                     <div className="relative group">
                         <button
                             onClick={toggleFilter}
@@ -527,274 +662,281 @@ const Sidebar = () => {
                             <FaFilter className={`w-5 h-5 transition-colors ${isFilterOpen ? 'text-orange-600' : 'text-gray-700 group-hover:text-orange-600'}`} />
                         </button>
                     </div>
+                )}
 
-                    {/* Settings */}
-                    <div className="relative group">
-                        <button
-                            onClick={() => navigate('/Settings')}
-                            className="w-12 h-12 bg-white border-2 border-gray-100 rounded-xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer active:scale-95"
-                        >
-                            <FaCog className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
-                        </button>
-                    </div>
+                {/* Settings */}
+                <div className="relative group">
+                    <button
+                        onClick={() => navigate('/Settings')}
+                        className="w-12 h-12 bg-white border-2 border-gray-100 rounded-xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer active:scale-95"
+                    >
+                        <FaCog className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
+                    </button>
+                </div>
 
-                    {/* Business Account */}
-                    <div className="relative group">
-                        <button
-                            onClick={handleBusinessAccountClick}
-                            className={`w-12 h-12 border-2 rounded-xl flex items-center justify-center transition-all duration-300 cursor-pointer active:scale-95 ${isSellerLoggedIn
-                                ? 'bg-green-50 border-green-500 shadow-md'
-                                : 'bg-white border-gray-100 hover:border-orange-500 hover:bg-orange-50'
-                                }`}
-                        >
-                            <FaStore className={`w-5 h-5 transition-colors ${isSellerLoggedIn ? 'text-green-600' : 'text-gray-700 group-hover:text-orange-600'}`} />
-                        </button>
-                    </div>
+                {/* Business Account */}
+                <div className="relative group">
+                    <button
+                        onClick={handleBusinessAccountClick}
+                        className={`w-12 h-12 border-2 rounded-xl flex items-center justify-center transition-all duration-300 cursor-pointer active:scale-95 ${isSellerLoggedIn
+                            ? 'bg-green-50 border-green-500 shadow-md'
+                            : 'bg-white border-gray-100 hover:border-orange-500 hover:bg-orange-50'
+                            }`}
+                    >
+                        <FaStore className={`w-5 h-5 transition-colors ${isSellerLoggedIn ? 'text-green-600' : 'text-gray-700 group-hover:text-orange-600'}`} />
+                    </button>
                 </div>
             </div>
+        </div>
 
-            {/* Mobile Filter Modal */}
-            {isFilterOpen && (
-                <div className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end">
-                    <div className="bg-white w-full max-h-[85vh] rounded-t-3xl overflow-y-auto">
-                        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between z-10">
-                            <h3 className="text-lg font-bold text-gray-800">Filters</h3>
+        {/* Mobile Filter Modal */}
+        {showFilter && isFilterOpen && (
+            <div className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end">
+                <div className="bg-white w-full max-h-[85vh] rounded-t-3xl overflow-y-auto">
+                    <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between z-10">
+                        <h3 className="text-lg font-bold text-gray-800">Filters</h3>
+                        <button
+                            onClick={toggleFilter}
+                            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                        >
+                            <span className="text-xl text-gray-600">×</span>
+                        </button>
+                    </div>
+
+                    <div className="p-4 pb-6">
+                        <div className="mb-5 space-y-3">
                             <button
-                                onClick={toggleFilter}
-                                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                                onClick={() => setIsEcoFriendly(!isEcoFriendly)}
+                                className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer active:bg-gray-50 ${isEcoFriendly ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'
+                                    }`}
                             >
-                                <span className="text-xl text-gray-600">×</span>
+                                <div
+                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isEcoFriendly ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                                        }`}
+                                >
+                                    {isEcoFriendly && (
+                                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                                    )}
+                                </div>
+                                <span className={`font-medium ${isEcoFriendly ? 'text-green-700' : 'text-gray-700'}`}>🌿 Eco-Friendly</span>
+                            </button>
+
+                            <button
+                                onClick={() => setIsGreenCrackers(!isGreenCrackers)}
+                                className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer active:bg-gray-50 ${isGreenCrackers ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white'
+                                    }`}
+                            >
+                                <div
+                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isGreenCrackers ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300'
+                                        }`}
+                                >
+                                    {isGreenCrackers && (
+                                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                                    )}
+                                </div>
+                                <span className={`font-medium ${isGreenCrackers ? 'text-emerald-700' : 'text-gray-700'}`}>♻️ Green Crackers</span>
                             </button>
                         </div>
 
-                        <div className="p-4 pb-6">
-                            <div className="mb-5 space-y-3">
-                                <button
-                                    onClick={() => setIsEcoFriendly(!isEcoFriendly)}
-                                    className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 transition-all cursor-pointer active:bg-gray-50"
-                                >
-                                    <div
-                                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isEcoFriendly ? 'border-green-500' : 'border-gray-300'
-                                            }`}
-                                    >
-                                        {isEcoFriendly && (
-                                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                        )}
+                        <div className="mb-5">
+                            <h4 className="text-base font-semibold text-gray-800 mb-2">Price Range</h4>
+                            <p className="text-sm text-gray-500 mb-4">
+                                The average price is ₹{filterOptions.priceRange.average.toLocaleString('en-IN')}
+                            </p>
+
+                            <div className="space-y-3 mb-4">
+                                {priceOptions.map((option, index) => (
+                                    <div key={index} className="flex items-center justify-between">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!selectedPrices[index]}
+                                                onChange={() => handlePriceChange(index)}
+                                                className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">{option.label}</span>
+                                        </label>
+                                        <span className="text-sm text-gray-600">{option.count}</span>
                                     </div>
-                                    <span className="font-medium text-gray-700">🌿 Eco-Friendly</span>
-                                </button>
+                                ))}
 
-                                <button
-                                    onClick={() => setIsGreenCrackers(!isGreenCrackers)}
-                                    className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 transition-all cursor-pointer active:bg-gray-50"
-                                >
-                                    <div
-                                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isGreenCrackers ? 'border-emerald-500' : 'border-gray-300'
-                                            }`}
-                                    >
-                                        {isGreenCrackers && (
-                                            <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                                        )}
-                                    </div>
-                                    <span className="font-medium text-gray-700">♻️ Green Crackers</span>
-                                </button>
-                            </div>
-
-                            <div className="mb-5">
-                                <h4 className="text-base font-semibold text-gray-800 mb-2">Price Range</h4>
-                                <p className="text-sm text-gray-500 mb-4">The average price is ₹25,000</p>
-
-                                <div className="space-y-3 mb-4">
-                                    {priceOptions.map((option, index) => (
-                                        <div key={index} className="flex items-center justify-between">
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!selectedPrices[index]}
-                                                    onChange={() => handlePriceChange(index)}
-                                                    className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
-                                                />
-                                                <span className="text-sm text-gray-700">{option.label}</span>
-                                            </label>
-                                            <span className="text-sm text-gray-600">{option.count}</span>
-                                        </div>
-                                    ))}
-
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={customPrice}
-                                            onChange={(e) => setCustomPrice(e.target.checked)}
-                                            className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
-                                        />
-                                        <span className="text-red-500 font-medium">Custom Price</span>
-                                    </div>
-                                </div>
-
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <div className="flex justify-between text-sm text-gray-700 mb-3">
-                                        <span className="font-medium">Price Range</span>
-                                        <span className="font-bold text-orange-600 text-base">
-                                            ₹{priceRange[1].toLocaleString('en-IN')}
-                                        </span>
-                                    </div>
-
+                                <div className="flex items-center gap-2">
                                     <input
-                                        type="range"
-                                        min="0"
-                                        max="50000"
-                                        step="100"
-                                        value={priceRange[1]}
-                                        onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                                        className="w-full h-2 bg-transparent appearance-none cursor-pointer"
-                                        style={{
-                                            background: `linear-gradient(to right, #fb923c 0%, #fb923c ${(priceRange[1] / 50000) * 100
-                                                }%, #e5e7eb ${(priceRange[1] / 50000) * 100}%, #e5e7eb 100%)`,
-                                        }}
+                                        type="checkbox"
+                                        checked={customPrice}
+                                        onChange={(e) => setCustomPrice(e.target.checked)}
+                                        className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
                                     />
-
-                                    <div className="text-xs text-gray-600 mt-2 text-center font-medium">
-                                        ₹0 - ₹{priceRange[1].toLocaleString('en-IN')} of ₹50,000
-                                    </div>
+                                    <span className="text-red-500 font-medium">Custom Price</span>
                                 </div>
                             </div>
 
-                            {/* Star Rating Section */}
-                            <div className="mb-5">
-                                <button
-                                    onClick={() => setIsStarRatingOpen(!isStarRatingOpen)}
-                                    className="w-full flex items-center justify-between py-3 border-b border-gray-200 cursor-pointer active:bg-gray-50 transition-colors"
-                                >
-                                    <h4 className="text-base font-semibold text-gray-800">Star Rating</h4>
-                                    {isStarRatingOpen ? <FaChevronUp className="w-5 h-5 text-gray-400" /> : <FaChevronDown className="w-5 h-5 text-gray-400" />}
-                                </button>
+                            <div className="p-4 bg-gray-50 rounded-lg">
+                                <div className="flex justify-between text-sm text-gray-700 mb-3">
+                                    <span className="font-medium">Price Range</span>
+                                    <span className="font-bold text-orange-600 text-base">
+                                        ₹{priceRange[0].toLocaleString('en-IN')} - ₹{priceRange[1].toLocaleString('en-IN')}
+                                    </span>
+                                </div>
 
-                                {isStarRatingOpen && (
-                                    <div className="mt-3 space-y-2">
-                                        {[5, 4, 3, 2, 1].map((rating) => (
-                                            <label key={rating} className="flex items-center gap-3 cursor-pointer active:bg-gray-50 p-2 rounded">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!selectedRatings[rating]}
-                                                    onChange={() => handleRatingChange(rating)}
-                                                    className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
-                                                />
-                                                <div className="flex items-center gap-1">
-                                                    {[...Array(5)].map((_, index) => (
-                                                        <FaStar
-                                                            key={index}
-                                                            className={`w-4 h-4 ${index < rating ? 'text-yellow-400' : 'text-gray-200'}`}
-                                                        />
-                                                    ))}
-                                                </div>
-                                                <span className="text-sm text-gray-600">
-                                                    {rating === 5 ? "5 Stars" : `${rating} Stars & up`}
-                                                </span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mb-5">
-                                <button
-                                    onClick={() => setIsBrandsOpen(!isBrandsOpen)}
-                                    className="w-full flex items-center justify-between py-3 border-b border-gray-200 cursor-pointer active:bg-gray-50 transition-colors"
-                                >
-                                    <h4 className="text-base font-semibold text-gray-800">Brands</h4>
-                                    {isBrandsOpen ? <FaChevronUp className="w-5 h-5 text-gray-400" /> : <FaChevronDown className="w-5 h-5 text-gray-400" />}
-                                </button>
-                                {isBrandsOpen && (
-                                    <div className="mt-3 space-y-2">
-                                        {crackerBrands.map((brand, index) => (
-                                            <label key={index} className="flex items-center gap-2 cursor-pointer active:bg-gray-50 p-2 rounded">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!selectedBrands[index]}
-                                                    onChange={() => handleBrandChange(index)}
-                                                    className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
-                                                />
-                                                <span className="text-sm text-gray-700">{brand}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mb-5">
-                                <button
-                                    onClick={() => setIsAgeOpen(!isAgeOpen)}
-                                    className="w-full flex items-center justify-between py-3 border-b border-gray-200 cursor-pointer active:bg-gray-50 transition-colors"
-                                >
-                                    <h4 className="text-base font-semibold text-gray-800">Age Category</h4>
-                                    {isAgeOpen ? <FaChevronUp className="w-5 h-5 text-gray-400" /> : <FaChevronDown className="w-5 h-5 text-gray-400" />}
-                                </button>
-                                {isAgeOpen && (
-                                    <div className="mt-3 space-y-2">
-                                        {ageCategories.map((category, index) => (
-                                            <label key={index} className="flex items-center gap-2 cursor-pointer active:bg-gray-50 p-2 rounded">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!selectedAges[index]}
-                                                    onChange={() => handleAgeChange(index)}
-                                                    className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
-                                                />
-                                                <span className="text-sm text-gray-700">{category.label}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mb-5">
-                                <button
-                                    onClick={() => setIsTagsOpen(!isTagsOpen)}
-                                    className="w-full flex items-center justify-between py-3 border-b border-gray-200 cursor-pointer active:bg-gray-50 transition-colors"
-                                >
-                                    <h4 className="text-base font-semibold text-gray-800">Tags</h4>
-                                    {isTagsOpen ? <FaChevronUp className="w-5 h-5 text-gray-400" /> : <FaChevronDown className="w-5 h-5 text-gray-400" />}
-                                </button>
-                                {isTagsOpen && (
-                                    <div className="mt-3 space-y-2">
-                                        {tags.map((tag, index) => (
-                                            <label key={index} className="flex items-center gap-2 cursor-pointer active:bg-gray-50 p-2 rounded">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!selectedTags[index]}
-                                                    onChange={() => handleTagChange(index)}
-                                                    className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
-                                                />
-                                                <span className="text-2xl">{tag.emoji}</span>
-                                                <span className="text-sm text-gray-700">{tag.label}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="space-y-3 pt-4">
-                                <button
-                                    onClick={toggleFilter}
-                                    className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold py-3 px-6 rounded-full transition-colors cursor-pointer"
-                                >
-                                    Apply Filters
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        resetFilters();
-                                        toggleFilter();
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max={filterOptions.priceRange.max}
+                                    step="100"
+                                    value={priceRange[1]}
+                                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                                    className="w-full h-2 bg-transparent appearance-none cursor-pointer"
+                                    style={{
+                                        background: `linear-gradient(to right, #fb923c 0%, #fb923c ${(priceRange[1] / filterOptions.priceRange.max) * 100
+                                            }%, #e5e7eb ${(priceRange[1] / filterOptions.priceRange.max) * 100}%, #e5e7eb 100%)`,
                                     }}
-                                    className="w-full text-gray-700 font-medium py-2 hover:text-orange-500 transition-colors cursor-pointer"
-                                >
-                                    Reset All Filters
-                                </button>
+                                />
+
+                                <div className="text-xs text-gray-600 mt-2 text-center font-medium">
+                                    ₹0 - ₹{priceRange[1].toLocaleString('en-IN')} of ₹{filterOptions.priceRange.max.toLocaleString('en-IN')}
+                                </div>
                             </div>
+                        </div>
+
+                        {/* Star Rating Section */}
+                        <div className="mb-5">
+                            <button
+                                onClick={() => setIsStarRatingOpen(!isStarRatingOpen)}
+                                className="w-full flex items-center justify-between py-3 border-b border-gray-200 cursor-pointer active:bg-gray-50 transition-colors"
+                            >
+                                <h4 className="text-base font-semibold text-gray-800">Star Rating</h4>
+                                {isStarRatingOpen ? <FaChevronUp className="w-5 h-5 text-gray-400" /> : <FaChevronDown className="w-5 h-5 text-gray-400" />}
+                            </button>
+
+                            {isStarRatingOpen && (
+                                <div className="mt-3 space-y-2">
+                                    {[5, 4, 3, 2, 1].map((rating) => (
+                                        <label key={rating} className="flex items-center gap-3 cursor-pointer active:bg-gray-50 p-2 rounded">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!selectedRatings[rating]}
+                                                onChange={() => handleRatingChange(rating)}
+                                                className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+                                            />
+                                            <div className="flex items-center gap-1">
+                                                {[...Array(5)].map((_, index) => (
+                                                    <FaStar
+                                                        key={index}
+                                                        className={`w-4 h-4 ${index < rating ? 'text-yellow-400' : 'text-gray-200'}`}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <span className="text-sm text-gray-600">
+                                                {rating === 5 ? "5 Stars" : `${rating} Stars & up`}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mb-5">
+                            <button
+                                onClick={() => setIsBrandsOpen(!isBrandsOpen)}
+                                className="w-full flex items-center justify-between py-3 border-b border-gray-200 cursor-pointer active:bg-gray-50 transition-colors"
+                            >
+                                <h4 className="text-base font-semibold text-gray-800">Brands</h4>
+                                {isBrandsOpen ? <FaChevronUp className="w-5 h-5 text-gray-400" /> : <FaChevronDown className="w-5 h-5 text-gray-400" />}
+                            </button>
+                            {isBrandsOpen && (
+                                <div className="mt-3 space-y-2">
+                                    {crackerBrands.map((brand, index) => (
+                                        <label key={index} className="flex items-center gap-2 cursor-pointer active:bg-gray-50 p-2 rounded">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!selectedBrands[index]}
+                                                onChange={() => handleBrandChange(index)}
+                                                className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">{brand}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mb-5">
+                            <button
+                                onClick={() => setIsAgeOpen(!isAgeOpen)}
+                                className="w-full flex items-center justify-between py-3 border-b border-gray-200 cursor-pointer active:bg-gray-50 transition-colors"
+                            >
+                                <h4 className="text-base font-semibold text-gray-800">Age Category</h4>
+                                {isAgeOpen ? <FaChevronUp className="w-5 h-5 text-gray-400" /> : <FaChevronDown className="w-5 h-5 text-gray-400" />}
+                            </button>
+                            {isAgeOpen && (
+                                <div className="mt-3 space-y-2">
+                                    {ageCategories.map((category, index) => (
+                                        <label key={index} className="flex items-center gap-2 cursor-pointer active:bg-gray-50 p-2 rounded">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!selectedAges[index]}
+                                                onChange={() => handleAgeChange(index)}
+                                                className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">{category.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mb-5">
+                            <button
+                                onClick={() => setIsTagsOpen(!isTagsOpen)}
+                                className="w-full flex items-center justify-between py-3 border-b border-gray-200 cursor-pointer active:bg-gray-50 transition-colors"
+                            >
+                                <h4 className="text-base font-semibold text-gray-800">Tags</h4>
+                                {isTagsOpen ? <FaChevronUp className="w-5 h-5 text-gray-400" /> : <FaChevronDown className="w-5 h-5 text-gray-400" />}
+                            </button>
+                            {isTagsOpen && (
+                                <div className="mt-3 space-y-2">
+                                    {tags.map((tag, index) => (
+                                        <label key={index} className="flex items-center gap-2 cursor-pointer active:bg-gray-50 p-2 rounded">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!selectedTags[index]}
+                                                onChange={() => handleTagChange(index)}
+                                                className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+                                            />
+                                            <span className="text-2xl">{tag.emoji}</span>
+                                            <span className="text-sm text-gray-700">{tag.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-3 pt-4">
+                            <button
+                                onClick={() => {
+                                    applyFilters();
+                                    toggleFilter();
+                                }}
+                                className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold py-3 px-6 rounded-full transition-colors cursor-pointer"
+                            >
+                                Apply Filters
+                            </button>
+                            <button
+                                onClick={() => {
+                                    resetFilters();
+                                    toggleFilter();
+                                }}
+                                className="w-full text-gray-700 font-medium py-2 hover:text-orange-500 transition-colors cursor-pointer"
+                            >
+                                Reset All Filters
+                            </button>
                         </div>
                     </div>
                 </div>
-            )}
-        </>
-    );
+            </div>
+        )}
+    </>;
 };
 
 export default Sidebar;

@@ -96,7 +96,7 @@ const Cart = () => {
     );
 
     const subtotal = useMemo(() =>
-        selectedCartItems.reduce((total, item) => total + (item.productId.price * item.quantity), 0), [selectedCartItems]
+        selectedCartItems.reduce((total, item) => total + ((item.productId.pricing?.selling_price || item.productId.price || 0) * item.quantity), 0), [selectedCartItems]
     );
 
     const tax = useMemo(() => subtotal * 0.18, [subtotal]);
@@ -104,8 +104,10 @@ const Cart = () => {
 
     const savings = useMemo(() =>
         selectedCartItems.reduce((total, item) => {
-            const discount = item.productId.originalPrice ? (item.productId.originalPrice - item.productId.price) * item.quantity : 0;
-            return total + discount;
+            const currentPrice = item.productId.pricing?.selling_price || item.productId.price || 0;
+            const originalPrice = item.productId.pricing?.mrp || item.productId.originalPrice || currentPrice;
+            const discount = (originalPrice - currentPrice) * item.quantity;
+            return total + (discount > 0 ? discount : 0);
         }, 0), [selectedCartItems]
     );
 
@@ -307,7 +309,7 @@ const Cart = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-6">
+        <div className="min-h-screen bg-gray-50 pt-6 mb-32 sm:mb-24">
             {error && (
                 <div className="max-w-7xl mx-auto px-4 mb-4">
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-3">
@@ -320,115 +322,182 @@ const Cart = () => {
                 </div>
             )}
 
-            <div className="max-w-8xl mx-auto px-6">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <div className="lg:col-span-8">
-                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                            <div className="flex items-center justify-between pb-6 border-b border-gray-200">
-                                <label className="flex items-center gap-4 cursor-pointer">
+            <div className="max-w-8xl mx-auto px-4 sm:px-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+                    {/* Cart Items Section */}
+                    <div className="lg:col-span-8 mb-6 lg:mb-0">
+                        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200">
+                            <div className="flex items-center justify-between pb-4 sm:pb-6 border-b border-gray-200">
+                                <label className="flex items-center gap-2 sm:gap-4 cursor-pointer">
                                     <input
                                         type="checkbox"
                                         checked={selectedItems.length === validCartItems.length}
                                         onChange={toggleSelectAll}
-                                        className="w-6 h-6 text-orange-500 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+                                        className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
                                     />
-                                    <span className="text-lg font-semibold text-gray-900">
-                                        Select All ({validCartItems.length} items)
+                                    <span className="text-base sm:text-lg font-semibold text-gray-900">
+                                        Select All ({validCartItems.length})
                                     </span>
                                 </label>
                                 {selectedItems.length > 0 && (
-                                    <span className="text-base text-orange-600 font-semibold">
+                                    <span className="text-sm sm:text-base text-orange-600 font-semibold">
                                         {selectedItems.length} selected
                                     </span>
                                 )}
                             </div>
 
-                            <div className="space-y-6 pt-6">
+                            <div className="space-y-4 sm:space-y-6 pt-4 sm:pt-6">
                                 {validCartItems.map((item) => {
                                     const isSelected = selectedItems.includes(item.productId._id);
                                     return (
                                         <div
                                             key={item.productId._id}
-                                            className={`rounded-xl p-6 border-2 transition-all ${isSelected ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white'
+                                            className={`rounded-xl p-4 sm:p-6 border-2 transition-all ${isSelected ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white'
                                                 }`}
                                         >
-                                            <div className="flex gap-6">
-                                                <div className="flex-shrink-0">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isSelected}
-                                                        onChange={() => toggleItemSelection(item.productId._id)}
-                                                        className="w-6 h-6 text-orange-500 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
-                                                    />
-                                                </div>
+                                            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                                {/* Checkbox and Image row for mobile */}
+                                                <div className="flex gap-4 items-start">
+                                                    <div className="flex-shrink-0 pt-1">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isSelected}
+                                                            onChange={() => toggleItemSelection(item.productId._id)}
+                                                            className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+                                                        />
+                                                    </div>
 
-                                                <div
-                                                    className="w-40 h-40 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
-                                                    onClick={() => navigate(`/product/${item.productId._id}`)}
-                                                >
-                                                    <img
-                                                        src={item.productId.images?.[0] || 'https://via.placeholder.com/150'}
-                                                        alt={item.productId.name}
-                                                        loading="lazy"
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
+                                                    <div
+                                                        className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-lg sm:rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
+                                                        onClick={() => navigate(`/product/${item.productId._id}`)}
+                                                    >
+                                                        <img
+                                                            src={item.productId.images?.[0] || '/images/placeholder.jpg'}
+                                                            alt={item.productId.name}
+                                                            loading="lazy"
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                e.target.src = '/images/placeholder.jpg';
+                                                                e.target.onerror = null;
+                                                            }}
+                                                        />
+                                                    </div>
 
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex-1">
+                                                    {/* Info for mobile (Next to image) */}
+                                                    <div className="flex-1 min-w-0 sm:hidden">
+                                                        <div className="flex justify-between items-start gap-2">
                                                             <h3
-                                                                className="text-xl font-bold text-gray-900 cursor-pointer hover:text-orange-600 transition-colors line-clamp-2"
+                                                                className="text-sm font-bold text-gray-900 cursor-pointer hover:text-orange-600 transition-colors line-clamp-2"
                                                                 onClick={() => navigate(`/product/${item.productId._id}`)}
                                                             >
                                                                 {item.productId.name}
                                                             </h3>
-                                                            <div className="flex items-center gap-3 pt-3">
-                                                                <p className="text-2xl font-bold text-orange-600">
-                                                                    ₹{item.productId.price?.toFixed(2) || '0.00'}
-                                                                </p>
-                                                                {item.productId.originalPrice && (
-                                                                    <span className="text-base text-gray-400 line-through">
-                                                                        ₹{item.productId.originalPrice.toFixed(2)}
-                                                                    </span>
-                                                                )}
-                                                            </div>
+                                                            <button
+                                                                onClick={() => removeItem(item.productId._id)}
+                                                                disabled={updatingItem === item.productId._id}
+                                                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+                                                            >
+                                                                <FaTrash className="w-4 h-4" />
+                                                            </button>
                                                         </div>
-                                                        <button
-                                                            onClick={() => removeItem(item.productId._id)}
-                                                            disabled={updatingItem === item.productId._id}
-                                                            className="p-3 text-red-500 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
-                                                        >
-                                                            <FaTrash className="w-5 h-5" />
-                                                        </button>
+                                                        <div className="mt-2">
+                                                            <p className="text-lg font-bold text-orange-600">
+                                                                ₹{(item.productId.pricing?.selling_price || item.productId.price || 0).toFixed(2)}
+                                                            </p>
+                                                            {(item.productId.pricing?.mrp || item.productId.originalPrice) && (
+                                                                <span className="text-xs text-gray-400 line-through">
+                                                                    ₹{(item.productId.pricing?.mrp || item.productId.originalPrice).toFixed(2)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Tablet and Desktop Info */}
+                                                <div className="hidden sm:flex flex-1 flex-col justify-between">
+                                                    <div>
+                                                        <div className="flex items-start justify-between">
+                                                            <h3
+                                                                className="text-lg md:text-xl font-bold text-gray-900 cursor-pointer hover:text-orange-600 transition-colors line-clamp-2"
+                                                                onClick={() => navigate(`/product/${item.productId._id}`)}
+                                                            >
+                                                                {item.productId.name}
+                                                            </h3>
+                                                            <button
+                                                                onClick={() => removeItem(item.productId._id)}
+                                                                disabled={updatingItem === item.productId._id}
+                                                                className="p-3 text-red-500 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+                                                            >
+                                                                <FaTrash className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex items-baseline gap-2 mt-2">
+                                                            <p className="text-xl md:text-2xl font-bold text-orange-600">
+                                                                ₹{(item.productId.pricing?.selling_price || item.productId.price || 0).toFixed(2)}
+                                                            </p>
+                                                            {(item.productId.pricing?.mrp || item.productId.originalPrice) && (
+                                                                <span className="text-sm text-gray-400 line-through">
+                                                                    ₹{(item.productId.pricing?.mrp || item.productId.originalPrice).toFixed(2)}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
 
-                                                    <div className="flex items-center justify-between pt-6">
-                                                        <div className="flex items-center gap-3 bg-gray-100 rounded-xl p-2">
+                                                    <div className="flex items-center justify-between mt-6">
+                                                        <div className="flex items-center gap-2 md:gap-3 bg-gray-100 rounded-lg md:rounded-xl p-1 md:p-2">
                                                             <button
                                                                 onClick={() => updateQuantity(item.productId._id, item.quantity - 1)}
                                                                 disabled={updatingItem === item.productId._id || item.quantity <= 1}
-                                                                className="w-10 h-10 rounded-lg bg-white hover:bg-orange-500 hover:text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                                                                className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white hover:bg-orange-500 hover:text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                                                             >
-                                                                <FaMinus className="w-4 h-4" />
+                                                                <FaMinus className="w-3 h-3 md:w-4 md:h-4" />
                                                             </button>
-                                                            <span className="w-16 text-center font-bold text-lg text-gray-900">
+                                                            <span className="w-10 md:w-16 text-center font-bold text-base md:text-lg text-gray-900">
                                                                 {item.quantity}
                                                             </span>
                                                             <button
                                                                 onClick={() => updateQuantity(item.productId._id, item.quantity + 1)}
                                                                 disabled={updatingItem === item.productId._id}
-                                                                className="w-10 h-10 rounded-lg bg-white hover:bg-orange-500 hover:text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                                                                className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white hover:bg-orange-500 hover:text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                                                             >
-                                                                <FaPlus className="w-4 h-4" />
+                                                                <FaPlus className="w-3 h-3 md:w-4 md:h-4" />
                                                             </button>
                                                         </div>
                                                         <div className="text-right">
-                                                            <p className="text-sm text-gray-500 font-medium">Subtotal</p>
-                                                            <p className="text-2xl font-bold text-gray-900 pt-1">
-                                                                ₹{(item.productId.price * item.quantity).toFixed(2)}
+                                                            <p className="text-xs text-gray-500 font-medium">Subtotal</p>
+                                                            <p className="text-xl md:text-2xl font-bold text-gray-900">
+                                                                ₹{((item.productId.pricing?.selling_price || item.productId.price || 0) * item.quantity).toFixed(2)}
                                                             </p>
                                                         </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Mobile Quantity and Subtotal row */}
+                                                <div className="flex items-center justify-between sm:hidden pt-4 border-t border-gray-100">
+                                                    <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1.5 border border-gray-200">
+                                                        <button
+                                                            onClick={() => updateQuantity(item.productId._id, item.quantity - 1)}
+                                                            disabled={updatingItem === item.productId._id || item.quantity <= 1}
+                                                            className="w-8 h-8 rounded-md bg-white text-gray-600 flex items-center justify-center shadow-sm disabled:opacity-50"
+                                                        >
+                                                            <FaMinus className="w-3 h-3" />
+                                                        </button>
+                                                        <span className="w-8 text-center font-bold text-gray-900">
+                                                            {item.quantity}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => updateQuantity(item.productId._id, item.quantity + 1)}
+                                                            disabled={updatingItem === item.productId._id}
+                                                            className="w-8 h-8 rounded-md bg-white text-gray-600 flex items-center justify-center shadow-sm disabled:opacity-50"
+                                                        >
+                                                            <FaPlus className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Subtotal</p>
+                                                        <p className="text-lg font-bold text-gray-900">
+                                                            ₹{((item.productId.pricing?.selling_price || item.productId.price || 0) * item.quantity).toFixed(2)}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -439,53 +508,53 @@ const Cart = () => {
                         </div>
                     </div>
 
-
-                    <div className="lg:col-span-4">
-                        <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 lg:sticky lg:top-24">
-                            <div className="flex items-center gap-4 pb-6 border-b border-gray-200">
-                                <div className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center">
-                                    <FaShoppingCart className="w-7 h-7 text-white" />
+                    {/* Order Summary Sidebar */}
+                    <div className="lg:col-span-4 mb-12 lg:mb-0">
+                        <div className="bg-white rounded-xl p-6 sm:p-8 shadow-sm border border-gray-200 lg:sticky lg:top-24">
+                            <div className="flex items-center gap-3 md:gap-4 pb-6 border-b border-gray-200">
+                                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-orange-500 rounded-lg sm:rounded-xl flex items-center justify-center">
+                                    <FaShoppingCart className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-gray-900">Order Summary</h2>
+                                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Order Summary</h2>
                             </div>
 
                             {selectedItems.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <p className="text-gray-500 text-base">
+                                <div className="text-center py-8 sm:py-12">
+                                    <p className="text-gray-500 text-sm sm:text-base">
                                         No items selected. Please select items to checkout.
                                     </p>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="space-y-4 pt-6">
-                                        <div className="flex justify-between text-gray-600 text-base">
+                                    <div className="space-y-3 sm:space-y-4 pt-6">
+                                        <div className="flex justify-between text-gray-600 text-sm sm:text-base">
                                             <span className="font-medium">Items ({selectedItems.length})</span>
                                             <span className="font-bold text-gray-900">₹{subtotal.toFixed(2)}</span>
                                         </div>
-                                        <div className="flex justify-between text-gray-600 text-base">
+                                        <div className="flex justify-between text-gray-600 text-sm sm:text-base">
                                             <span className="font-medium">Tax (GST 18%)</span>
                                             <span className="font-bold text-gray-900">₹{tax.toFixed(2)}</span>
                                         </div>
-                                        <div className="flex justify-between text-gray-600 text-base">
+                                        <div className="flex justify-between text-gray-600 text-sm sm:text-base">
                                             <span className="font-medium">Shipping</span>
-                                            <div className="flex items-center gap-2">
-                                                <FaCheckCircle className="w-5 h-5 text-green-500" />
+                                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                                <FaCheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                                                 <span className="font-bold text-green-600">FREE</span>
                                             </div>
                                         </div>
                                         {savings > 0 && (
-                                            <div className="flex justify-between items-center bg-green-50 p-4 rounded-xl">
-                                                <div className="flex items-center gap-3">
-                                                    <FaTag className="w-5 h-5 text-green-600" />
-                                                    <span className="font-semibold text-green-700 text-base">You Save</span>
+                                            <div className="flex justify-between items-center bg-green-50 p-3 sm:p-4 rounded-lg sm:rounded-xl">
+                                                <div className="flex items-center gap-2 sm:gap-3">
+                                                    <FaTag className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                                                    <span className="font-semibold text-green-700 text-sm sm:text-base">You Save</span>
                                                 </div>
-                                                <span className="font-bold text-green-600 text-lg">₹{savings.toFixed(2)}</span>
+                                                <span className="font-bold text-green-600 text-base sm:text-lg">₹{savings.toFixed(2)}</span>
                                             </div>
                                         )}
-                                        <div className="border-t border-gray-200 pt-6 mt-6">
+                                        <div className="border-t border-gray-200 pt-4 sm:pt-6 mt-4 sm:mt-6">
                                             <div className="flex justify-between items-center">
-                                                <span className="text-xl font-bold text-gray-900">Total</span>
-                                                <span className="text-3xl font-bold text-orange-600">
+                                                <span className="text-lg sm:text-xl font-bold text-gray-900">Total</span>
+                                                <span className="text-2xl sm:text-3xl font-bold text-orange-600">
                                                     ₹{total.toFixed(2)}
                                                 </span>
                                             </div>
@@ -495,21 +564,21 @@ const Cart = () => {
                                     <button
                                         onClick={handleCheckout}
                                         disabled={selectedItems.length === 0}
-                                        className="w-full py-4 bg-orange-500 text-white font-bold text-lg rounded-xl hover:bg-orange-600 transition-all shadow-md hover:shadow-lg mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full py-3 sm:py-4 bg-orange-500 text-white font-bold text-base sm:text-lg rounded-xl hover:bg-orange-600 transition-all shadow-md hover:shadow-lg mt-6 sm:mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         Proceed to Checkout
                                     </button>
 
                                     <button
                                         onClick={() => navigate('/')}
-                                        className="w-full py-4 bg-white border-2 border-gray-300 text-gray-700 font-semibold text-base rounded-xl hover:border-orange-500 hover:bg-orange-50 hover:text-orange-600 transition-all mt-4"
+                                        className="w-full py-3 sm:py-4 bg-white border-2 border-gray-300 text-gray-700 font-semibold text-sm sm:text-base rounded-xl hover:border-orange-500 hover:bg-orange-50 hover:text-orange-600 transition-all mt-3 sm:mt-4"
                                     >
                                         Continue Shopping
                                     </button>
 
-                                    <div className="pt-6 mt-6 border-t border-gray-200">
-                                        <div className="flex items-center gap-3 text-sm text-gray-600">
-                                            <FaCheckCircle className="w-5 h-5 text-green-500" />
+                                    <div className="pt-4 sm:pt-6 mt-4 sm:mt-6 border-t border-gray-200">
+                                        <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600">
+                                            <FaCheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                                             <p>Secure checkout with SSL encryption</p>
                                         </div>
                                     </div>

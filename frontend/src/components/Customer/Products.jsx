@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaStar, FaShoppingCart, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaStar, FaShoppingCart, FaCheckCircle, FaExclamationCircle, FaTag } from 'react-icons/fa';
 import { BsFillBagHeartFill } from 'react-icons/bs';
 import API from '../../../api';
 
-const Products = () => {
+const Products = ({ filters = {} }) => {
     const navigate = useNavigate();
     const [addingToCart, setAddingToCart] = useState(null);
     const [notification, setNotification] = useState({ show: false, message: '', type: '' });
@@ -17,20 +17,70 @@ const Products = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [cartItems, setCartItems] = useState([]);
 
-    // Memoize token check
     const isLoggedIn = useMemo(() => {
         return !!localStorage.getItem('token');
     }, []);
 
-    // Fetch all data in parallel for faster loading
     useEffect(() => {
         const fetchAllData = async () => {
             setLoading(true);
             try {
-                // Fetch products first (most important)
-                const productsPromise = API.get(`/products/customer/page?page=${currentPage}`);
+                // Build query parameters from filters
+                const queryParams = new URLSearchParams();
+                queryParams.append('page', currentPage);
 
-                // Fetch wishlist and cart in parallel only if logged in
+                // Check if any filters are active
+                const hasActiveFilters =
+                    (filters.priceRange && filters.priceRange[1] > 0) ||
+                    (filters.selectedBrands && filters.selectedBrands.length > 0) ||
+                    (filters.selectedAges && filters.selectedAges.length > 0) ||
+                    (filters.selectedTags && filters.selectedTags.length > 0) ||
+                    (filters.selectedRatings && filters.selectedRatings.length > 0) ||
+                    filters.isEcoFriendly ||
+                    filters.isGreenCrackers;
+
+                let productsPromise;
+
+                if (hasActiveFilters) {
+                    // Use filter endpoint
+                    if (filters.priceRange) {
+                        queryParams.append('minPrice', filters.priceRange[0]);
+                        if (filters.priceRange[1] > 0) {
+                            queryParams.append('maxPrice', filters.priceRange[1]);
+                        }
+                    }
+
+                    if (filters.selectedBrands && filters.selectedBrands.length > 0) {
+                        queryParams.append('brands', filters.selectedBrands.join(','));
+                    }
+
+                    if (filters.selectedAges && filters.selectedAges.length > 0) {
+                        queryParams.append('ageCategories', filters.selectedAges.join(','));
+                    }
+
+                    if (filters.selectedTags && filters.selectedTags.length > 0) {
+                        queryParams.append('tags', filters.selectedTags.join(','));
+                    }
+
+                    if (filters.selectedRatings && filters.selectedRatings.length > 0) {
+                        const minRating = Math.min(...filters.selectedRatings);
+                        queryParams.append('minRating', minRating);
+                    }
+
+                    if (filters.isEcoFriendly) {
+                        queryParams.append('isEcoFriendly', 'true');
+                    }
+
+                    if (filters.isGreenCrackers) {
+                        queryParams.append('isGreenCrackers', 'true');
+                    }
+
+                    productsPromise = API.get(`/products/customer/filter?${queryParams.toString()}`);
+                } else {
+                    // Use regular pagination endpoint
+                    productsPromise = API.get(`/products/customer/page?page=${currentPage}`);
+                }
+
                 const promises = [productsPromise];
                 if (isLoggedIn) {
                     promises.push(API.get('/wishlist'));
@@ -39,7 +89,6 @@ const Products = () => {
 
                 const results = await Promise.allSettled(promises);
 
-                // Handle products
                 if (results[0].status === 'fulfilled') {
                     setProducts(results[0].value.data.products || []);
                     setTotalPages(results[0].value.data.totalPages || 1);
@@ -49,7 +98,6 @@ const Products = () => {
                     setProducts([]);
                 }
 
-                // Handle wishlist
                 if (results[1]?.status === 'fulfilled') {
                     const wishlistProductIds = (Array.isArray(results[1].value.data) ? results[1].value.data : [])
                         .filter(item => item?.productId?._id)
@@ -57,7 +105,6 @@ const Products = () => {
                     setWishlistItems(wishlistProductIds);
                 }
 
-                // Handle cart
                 if (results[2]?.status === 'fulfilled') {
                     setCartItems(results[2].value.data.items || []);
                 }
@@ -70,16 +117,14 @@ const Products = () => {
         };
 
         fetchAllData();
-    }, [currentPage, isLoggedIn]);
+    }, [currentPage, isLoggedIn, filters]);
 
-    // Memoized cart check function
     const isInCart = useCallback((productId) => {
         return cartItems.some(item =>
             (item.productId?._id || item.productId) === productId
         );
     }, [cartItems]);
 
-    // Memoized cart item finder
     const getCartItem = useCallback((productId) => {
         return cartItems.find(item =>
             (item.productId?._id || item.productId) === productId
@@ -155,7 +200,6 @@ const Products = () => {
 
             showNotification('Added to cart successfully!', 'success');
 
-            // Optimistically update cart items
             const response = await API.get('/cart');
             setCartItems(response.data.items || []);
         } catch (error) {
@@ -171,25 +215,39 @@ const Products = () => {
         }
     };
 
-    // Memoize product cards to prevent unnecessary re-renders
     const ProductCard = useCallback(({ product }) => {
         const inCart = isInCart(product._id);
         const cartItem = getCartItem(product._id);
+        const availablePieces = product.stock_control?.available_pieces || 0;
+        const sellingPrice = product.pricing?.selling_price || 0;
+        const mrp = product.pricing?.mrp;
+        const discount = product.discount_percentage;
+        const brandName = product.brand || 'Standard';
 
         return (
             <div
                 onClick={() => handleProductClick(product._id)}
                 className="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 cursor-pointer active:scale-98"
             >
-                {/* Product Image */}
                 <div className="relative w-full aspect-[4/3] overflow-hidden cursor-pointer">
                     <img
-                        src={product.images?.[0] || 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000'}
+                        src={product.images?.[0] || '/images/placeholder.jpg'}
                         alt={product.name}
                         className="w-full h-full object-cover"
                         loading="lazy"
+                        onError={(e) => {
+                            e.target.src = '/images/placeholder.jpg';
+                            e.target.onerror = null; // Prevent infinite loop if placeholder also fails
+                        }}
                     />
-                    {/* Wishlist Heart Button */}
+
+                    {discount > 0 && (
+                        <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 shadow-sm">
+                            <FaTag className="w-2 h-2" />
+                            {discount}% OFF
+                        </div>
+                    )}
+
                     <button
                         onClick={(e) => toggleWishlist(e, product._id)}
                         disabled={togglingWishlist === product._id}
@@ -206,42 +264,43 @@ const Products = () => {
                             />
                         )}
                     </button>
-                    {product.stock <= 0 && (
+                    {availablePieces <= 0 && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                             <span className="text-white font-bold text-sm sm:text-base md:text-lg">Out of Stock</span>
                         </div>
                     )}
                 </div>
 
-                {/* Product Info */}
                 <div className="p-3 sm:p-4">
-                    {/* Product Name and Rating */}
                     <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
                         <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2 flex-1">{product.name}</h3>
                         <div className="flex items-center gap-1 bg-gray-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded cursor-pointer flex-shrink-0">
                             <FaStar className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-yellow-400" />
                             <span className="text-xs sm:text-sm font-medium text-gray-700">4.2</span>
-                            <span className="text-[10px] sm:text-xs text-gray-500">(0)</span>
                         </div>
                     </div>
 
-                    {/* Category and Stock Row */}
                     <div className="flex items-center justify-between mb-2 sm:mb-3">
                         <div className="flex flex-col">
                             <span className="text-[10px] sm:text-xs text-gray-500 font-medium mb-0.5 sm:mb-1">Category</span>
-                            <span className="text-xs sm:text-sm font-bold text-gray-800 capitalize">{product.category || 'General'}</span>
+                            <span className="text-xs sm:text-sm font-bold text-gray-800 capitalize">{product.category?.main || 'General'}</span>
                         </div>
                         <div className="flex flex-col items-end">
-                            <span className="text-[10px] sm:text-xs text-gray-500 font-medium mb-0.5 sm:mb-1">Stock</span>
-                            <span className={`text-xs sm:text-sm font-bold ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-orange-600' : 'text-red-600'}`}>
-                                {product.stock > 0 ? `${product.stock} units` : 'Out of stock'}
+                            <span className="text-[10px] sm:text-xs text-gray-500 font-medium mb-0.5 sm:mb-1">Brand</span>
+                            <span className="text-xs sm:text-sm font-bold text-orange-600 capitalize">
+                                {brandName}
                             </span>
                         </div>
                     </div>
 
-                    {/* Price and Action Buttons */}
                     <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100 gap-2">
-                        <span className="text-base sm:text-lg md:text-xl font-bold text-gray-800">₹{product.price?.toFixed(2) || '0.00'}</span>
+                        <div className="flex flex-col">
+                            <span className="text-base sm:text-lg md:text-xl font-bold text-gray-800">₹{sellingPrice.toFixed(2)}</span>
+                            {mrp > sellingPrice && (
+                                <span className="text-[10px] sm:text-xs text-gray-400 line-through">₹{mrp.toFixed(2)}</span>
+                            )}
+                        </div>
+
                         {inCart ? (
                             <button
                                 onClick={(e) => {
@@ -258,8 +317,8 @@ const Products = () => {
                         ) : (
                             <button
                                 onClick={(e) => handleAddToCart(e, product._id)}
-                                disabled={addingToCart === product._id || product.stock <= 0}
-                                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-white rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 ${addingToCart === product._id || product.stock <= 0
+                                disabled={addingToCart === product._id || availablePieces <= 0}
+                                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-white rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 ${addingToCart === product._id || availablePieces <= 0
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 cursor-pointer'
                                     }`}
@@ -273,7 +332,7 @@ const Products = () => {
                                     <>
                                         <FaShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
                                         <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
-                                            {product.stock <= 0 ? 'Out' : 'Add'}
+                                            {availablePieces <= 0 ? 'Out' : 'Add'}
                                         </span>
                                     </>
                                 )}
@@ -302,7 +361,6 @@ const Products = () => {
                 </div>
             )}
 
-            {/* Products Grid */}
             <div className="p-3 sm:p-4 md:p-6">
 
                 {loading ? (
@@ -332,7 +390,6 @@ const Products = () => {
                     </div>
                 )}
 
-                {/* Pagination Controls */}
                 {!loading && !error && totalPages > 1 && (
                     <div className="flex items-center justify-center gap-2 sm:gap-4 mt-6 sm:mt-8">
                         <button

@@ -7,13 +7,27 @@ import LandingPage from '../components/Customer/LandingPage';
 import Footer from '../components/Customer/Footer';
 
 const Homepage = () => {
+    const [filters, setFilters] = useState({
+        priceRange: [0, 50000],
+        selectedBrands: [],
+        selectedAges: [],
+        selectedTags: [],
+        selectedRatings: [],
+        isEcoFriendly: false,
+        isGreenCrackers: false
+    });
+
+    const handleFiltersChange = (newFilters) => {
+        setFilters(newFilters);
+    };
+
     return (
-        <div className="flex w-full h-screen bg-gray-50">
-            <Sidebar />
+        <div className="flex w-full h-screen bg-gray-50 overflow-hidden">
+            <Sidebar onFiltersChange={handleFiltersChange} />
             <div className="flex flex-col flex-1 overflow-y-auto">
                 <Searchbar />
                 <LandingPage />
-                <Products />
+                <Products filters={filters} />
                 <Footer />
             </div>
         </div>

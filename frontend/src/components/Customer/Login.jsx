@@ -45,9 +45,12 @@ const Login = () => {
             });
 
             if (response.data.token) {
+                // Store authentication data
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
                 localStorage.setItem('userRole', 'customer');
+                // Store login timestamp for 24-hour auto-logout
+                localStorage.setItem('loginTime', new Date().getTime().toString());
 
                 setSuccess('Login successful! Redirecting...');
                 toast.success('Login successful!');

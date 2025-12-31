@@ -1,6 +1,4 @@
 import Order from "../models/Order.js";
-import Payout from "../models/Payout.js";
-import { sendNotification } from "../utils/sendNotification.js";   // ⭐ IMPORTANT
 
 
 // ⭐ GET ALL ORDERS FOR SELLER

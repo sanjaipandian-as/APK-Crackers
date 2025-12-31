@@ -132,11 +132,17 @@ const Adminapproval = () => {
                                         src={product.images[0]}
                                         alt={product.name}
                                         className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.target.src = '/images/placeholder.jpg';
+                                            e.target.onerror = null;
+                                        }}
                                     />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-lg font-medium">
-                                        No Image
-                                    </div>
+                                    <img
+                                        src="/images/placeholder.jpg"
+                                        alt="No Image"
+                                        className="w-full h-full object-cover"
+                                    />
                                 )}
                                 {product.images && product.images.length > 1 && (
                                     <span className="absolute bottom-2.5 right-2.5 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-semibold">
