@@ -44,7 +44,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      "https://yourfrontend.com"
+      "https://apk-crackers.vercel.app"
     ],
     credentials: true,
   })
