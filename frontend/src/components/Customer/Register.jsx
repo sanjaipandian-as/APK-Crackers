@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
+import showToast from '../../utils/toast.jsx';
 import API from '../../../api';
 
 const Register = () => {
+    useEffect(() => {
+        document.title = 'Customer Sign Up - APK Crackers';
+    }, []);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -71,15 +75,17 @@ const Register = () => {
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
 
-                setSuccess('Registration successful! Redirecting...');
+                showToast.success('Registration successful! Redirecting...');
 
                 setTimeout(() => {
                     window.location.href = '/';
-                }, 2000);
+                }, 1500);
             }
         } catch (err) {
             console.error('Registration error:', err);
-            setError(err.response?.data?.message || 'Registration failed. Please try again.');
+            const errorMessage = err.response?.data?.message || 'Registration failed. Please try again.';
+            setError(errorMessage);
+            showToast.error(errorMessage);
         } finally {
             setLoading(false);
         }

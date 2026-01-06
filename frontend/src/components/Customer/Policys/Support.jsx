@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiPhone, FiMail, FiMapPin, FiClock, FiMessageCircle, FiHelpCircle, FiFileText, FiUsers, FiSend, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import API from '../../../../api';
 
 const Support = () => {
+    useEffect(() => {
+        document.title = 'Help & Support - APK Crackers';
+    }, []);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -32,6 +35,21 @@ const Support = () => {
         setLoading(true);
         setError('');
 
+        // Validate category before sending
+        const validCategories = ['general', 'order', 'product', 'payment', 'delivery', 'return', 'technical', 'other'];
+        if (!validCategories.includes(formData.category)) {
+            setError(`Invalid category selected. Please refresh the page and try again.`);
+            setLoading(false);
+            return;
+        }
+
+        // Validate message length
+        if (formData.message.length < 10) {
+            setError('Message must be at least 10 characters long.');
+            setLoading(false);
+            return;
+        }
+
         try {
             const response = await API.post('/support/create', formData);
 
@@ -54,7 +72,6 @@ const Support = () => {
             }, 5000);
 
         } catch (err) {
-            console.error('Error submitting support ticket:', err);
             setError(
                 err.response?.data?.message ||
                 'Failed to submit your request. Please try again later.'
@@ -167,7 +184,7 @@ const Support = () => {
                             We're here to help
                         </h1>
                         <p className="text-xl text-gray-600 leading-relaxed">
-                            Have a question about your order, our products, or need technical support?
+                            Have a question about our platform, licensed sellers, or need technical support?
                             Our dedicated team is ready to assist you every step of the way.
                         </p>
                     </div>
@@ -310,11 +327,11 @@ const Support = () => {
                                                     } rounded-xl focus:ring-0 outline-none transition-all text-gray-900 font-medium`}
                                             >
                                                 <option value="general">General Question</option>
-                                                <option value="order">Order Status</option>
+                                                <option value="order">Order Support</option>
                                                 <option value="product">Product Information</option>
-                                                <option value="payment">Payment Issue</option>
-                                                <option value="delivery">Shipping & Delivery</option>
-                                                <option value="return">Returns & Refunds</option>
+                                                <option value="payment">Payment Issues</option>
+                                                <option value="delivery">Delivery Support</option>
+                                                <option value="return">Return & Refund</option>
                                                 <option value="technical">Technical Support</option>
                                                 <option value="other">Other</option>
                                             </select>
@@ -341,7 +358,7 @@ const Support = () => {
 
                                     <div>
                                         <label className="block text-sm font-bold text-gray-900 mb-2">
-                                            Your Message
+                                            Your Message <span className="text-gray-400 font-normal text-xs">(Min 10 characters)</span>
                                         </label>
                                         <textarea
                                             name="message"
@@ -350,11 +367,18 @@ const Support = () => {
                                             onFocus={() => setFocusedField('message')}
                                             onBlur={() => setFocusedField('')}
                                             required
+                                            minLength={10}
                                             rows="6"
                                             className={`w-full px-4 py-3.5 bg-gray-50 border-2 ${focusedField === 'message' ? 'border-orange-500 bg-white' : 'border-gray-300'
                                                 } rounded-xl focus:ring-0 outline-none transition-all resize-none text-gray-900 font-medium`}
-                                            placeholder="Please describe your issue in detail..."
+                                            placeholder="Please describe your issue in detail (minimum 10 characters)..."
                                         />
+                                        {formData.message.length > 0 && formData.message.length < 10 && (
+                                            <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                                                <FiAlertCircle className="w-4 h-4" />
+                                                Message must be at least 10 characters ({formData.message.length}/10)
+                                            </p>
+                                        )}
                                     </div>
 
                                     <button

@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiMail, FiPhone, FiMapPin, FiClock, FiSend } from 'react-icons/fi';
 
 const Contact = () => {
+    useEffect(() => {
+        document.title = 'Contact Us - APK Crackers';
+    }, []);
     const [formData, setFormData] = useState({
         name: '',
         email: '',

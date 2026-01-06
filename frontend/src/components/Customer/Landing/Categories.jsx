@@ -120,7 +120,7 @@ const Categories = () => {
             <div className="max-w-8xl mx-auto px-2 sm:px-4 md:px-6">
                 <div className="mb-6 sm:mb-8 md:mb-10">
                     <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                        Shop by Category
+                        Browse by Category
                     </h2>
                     <p className="text-sm sm:text-base text-gray-600">
                         Explore premium crackers & fireworks
@@ -157,10 +157,21 @@ const Categories = () => {
                                 <div
                                     key={cat.slug}
                                     onClick={() => handleCategoryClick(cat.slug)}
-                                    className="flex-shrink-0 w-[260px] sm:w-[270px] md:w-[280px] bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer group snap-start"
+                                    className="flex-shrink-0 w-[260px] sm:w-[270px] md:w-[280px] bg-white border border-gray-200 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer group snap-start flex flex-row sm:flex-col"
                                     style={{ minWidth: `${cardWidth}px` }}
                                 >
-                                    <div className="h-36 sm:h-40 md:h-44 w-full overflow-hidden bg-gray-100">
+                                    {/* Mobile: Details on Left | Desktop: Details on Bottom */}
+                                    <div className="flex-1 sm:flex-none p-3 sm:p-4 flex flex-col justify-center sm:justify-start order-1 sm:order-2">
+                                        <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-1 group-hover:text-orange-600 transition-colors">
+                                            {cat.name}
+                                        </h3>
+                                        <button className="w-full px-3 py-2 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white text-xs sm:text-sm font-semibold rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95">
+                                            View Products
+                                        </button>
+                                    </div>
+
+                                    {/* Mobile: Image on Right | Desktop: Image on Top */}
+                                    <div className="relative w-32 sm:w-full h-full sm:h-36 md:h-40 lg:h-44 overflow-hidden bg-gray-100 flex-shrink-0 order-2 sm:order-1">
                                         <img
                                             src={cat.image}
                                             alt={cat.name}
@@ -171,15 +182,6 @@ const Categories = () => {
                                                 e.target.onerror = null;
                                             }}
                                         />
-                                    </div>
-
-                                    <div className="p-3 sm:p-4">
-                                        <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-2 sm:mb-3 line-clamp-1 group-hover:text-orange-600 transition-colors">
-                                            {cat.name}
-                                        </h3>
-                                        <button className="w-full px-3 py-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors shadow-sm hover:shadow-md">
-                                            View Products
-                                        </button>
                                     </div>
                                 </div>
                             ))}

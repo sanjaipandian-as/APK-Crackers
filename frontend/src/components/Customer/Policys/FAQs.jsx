@@ -1,133 +1,102 @@
-import { useState } from 'react';
-import { FiChevronDown, FiChevronUp, FiSearch } from 'react-icons/fi';
+import { useState, useEffect } from 'react'
+import { FiChevronDown, FiChevronUp, FiSearch } from 'react-icons/fi'
 
 const FAQs = () => {
-    const [openFaq, setOpenFaq] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [activeCategory, setActiveCategory] = useState('all');
+    useEffect(() => {
+        document.title = 'Frequently Asked Questions - APK Crackers'
+    }, [])
+    const [openFaq, setOpenFaq] = useState(null)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [activeCategory, setActiveCategory] = useState('all')
 
     const categories = [
         { id: 'all', name: 'All Questions' },
-        { id: 'orders', name: 'Orders & Payment' },
-        { id: 'shipping', name: 'Shipping & Delivery' },
-        { id: 'returns', name: 'Returns & Refunds' },
+        { id: 'enquiry', name: 'Enquiries & Quotations' },
+        { id: 'process', name: 'How It Works' },
         { id: 'products', name: 'Products & Safety' },
         { id: 'account', name: 'Account & Support' }
-    ];
+    ]
 
     const faqs = [
         {
-            category: 'orders',
-            question: 'How do I place an order?',
-            answer: 'Browse our products, add items to cart, proceed to checkout, enter delivery details, and complete payment. You\'ll receive an order confirmation email immediately.'
+            category: 'enquiry',
+            question: 'How does the quotation process work?',
+            answer:
+                'You can select products you are interested in and send an enquiry. The seller will contact you directly offline to provide the final quotation.'
         },
         {
-            category: 'orders',
-            question: 'What payment methods do you accept?',
-            answer: 'We accept Credit/Debit Cards, Net Banking, UPI, and popular digital wallets. All payments are processed securely through encrypted gateways.'
+            category: 'enquiry',
+            question: 'Can I place an order on this platform?',
+            answer:
+                'No. This platform does not support online ordering. It only helps you connect with licensed sellers for enquiries.'
         },
         {
-            category: 'orders',
-            question: 'Can I cancel my order?',
-            answer: 'Yes, you can cancel your order before it is shipped. Go to My Orders, select the order, and click Cancel. Refund will be processed within 5-7 business days.'
+            category: 'enquiry',
+            question: 'Does the platform handle payments?',
+            answer:
+                'No. All pricing, payment, and billing are handled offline directly between you and the seller.'
         },
         {
-            category: 'orders',
-            question: 'Do you provide invoices?',
-            answer: 'Yes, a tax invoice is included with every order. You can also download it from your account\'s order history section.'
+            category: 'process',
+            question: 'What happens after I send an enquiry?',
+            answer:
+                'After you send an enquiry, the seller reviews your interest and contacts you directly to discuss availability, pricing, and next steps offline.'
         },
         {
-            category: 'shipping',
-            question: 'What are the delivery charges?',
-            answer: 'Shipping is FREE on orders above ₹999. For orders below ₹999, a shipping charge of ₹99 applies. Express shipping is available in select cities for ₹199.'
-        },
-        {
-            category: 'shipping',
-            question: 'How long does delivery take?',
-            answer: 'Metro cities: 3-5 business days, Tier 2 cities: 5-7 business days, Tier 3 & Rural: 7-10 business days. Delivery times may vary during festive seasons.'
-        },
-        {
-            category: 'shipping',
-            question: 'Do you deliver to my area?',
-            answer: 'We deliver across India, subject to local regulations. Enter your pincode at checkout to check delivery availability in your area.'
-        },
-        {
-            category: 'shipping',
-            question: 'How can I track my order?',
-            answer: 'You\'ll receive a tracking number via email and SMS once your order is shipped. Use it on our Track Order page or the courier partner\'s website for real-time updates.'
-        },
-        {
-            category: 'returns',
-            question: 'What is your return policy?',
-            answer: 'Returns are accepted within 48 hours for damaged, defective, or wrong items. Due to safety regulations, opened or used crackers cannot be returned.'
-        },
-        {
-            category: 'returns',
-            question: 'How do I return a product?',
-            answer: 'Contact our support team within 48 hours with photos/videos of the issue. Once approved, we\'ll arrange pickup and process your refund within 5-7 business days.'
-        },
-        {
-            category: 'returns',
-            question: 'When will I receive my refund?',
-            answer: 'Refunds are processed within 5-7 business days after we receive and inspect the returned item. The amount will be credited to your original payment method.'
-        },
-        {
-            category: 'returns',
-            question: 'Can I exchange a product?',
-            answer: 'Yes, you can request a replacement for damaged or defective items. We\'ll send a replacement of the same product subject to availability.'
+            category: 'process',
+            question: 'Is delivery managed by the platform?',
+            answer:
+                'No. Delivery, if any, is fully handled by the licensed seller and discussed directly with them.'
         },
         {
             category: 'products',
-            question: 'Are your crackers safe and certified?',
-            answer: 'Yes, all our products are BIS certified and PESO approved. We only sell crackers that meet all safety standards and regulations.'
+            question: 'Are the products shown on the platform safe?',
+            answer:
+                'Product information is shared by licensed sellers. Customers should always follow safety instructions provided by the seller and on product packaging.'
         },
         {
             category: 'products',
-            question: 'How should I store crackers?',
-            answer: 'Store in a cool, dry place away from heat, moisture, and direct sunlight. Keep away from children and flammable materials. Follow all safety instructions on the package.'
+            question: 'Do you sell eco-friendly or green crackers?',
+            answer:
+                'Some sellers may offer eco-friendly or green crackers. Availability and details should be confirmed directly with the seller.'
         },
         {
             category: 'products',
             question: 'What safety precautions should I follow?',
-            answer: 'Always light crackers in open spaces, maintain safe distance, keep water/sand nearby, never hold lit crackers, supervise children, and follow all instructions on the package.'
-        },
-        {
-            category: 'products',
-            question: 'Do you sell eco-friendly crackers?',
-            answer: 'Yes, we have a dedicated section for green crackers that produce less smoke and noise. Look for the "Eco-Friendly" tag on product pages.'
+            answer:
+                'Always use crackers in open areas, maintain safe distance, supervise children, and follow all safety guidelines provided by the seller and manufacturer.'
         },
         {
             category: 'account',
             question: 'How do I create an account?',
-            answer: 'Click on "Sign Up" at the top right, enter your details (name, email, phone, password), and verify your email/phone. You can also sign up during checkout.'
+            answer:
+                'You can create an account using your name, email, and phone number. This helps sellers contact you regarding your enquiries.'
         },
         {
             category: 'account',
-            question: 'I forgot my password. What should I do?',
-            answer: 'Click "Forgot Password" on the login page, enter your registered email, and follow the reset link sent to your email to create a new password.'
+            question: 'How can I contact support?',
+            answer:
+                'You can reach our support team through the Contact Support page or by emailing support@apkcrackers.com.'
         },
         {
             category: 'account',
-            question: 'How do I contact customer support?',
-            answer: 'Email us at support@apkcrackers.com, call +91 98765 43210 (Mon-Sat, 9 AM - 6 PM), or use the contact form on our Support page.'
-        },
-        {
-            category: 'account',
-            question: 'Can I save my address for future orders?',
-            answer: 'Yes, you can save multiple addresses in your account. Go to My Account > Addresses to add, edit, or delete saved addresses.'
+            question: 'Can I save my details for future enquiries?',
+            answer:
+                'Yes. Saving your details makes it easier to send enquiries without re-entering information each time.'
         }
-    ];
+    ]
 
     const filteredFaqs = faqs.filter(faq => {
-        const matchesCategory = activeCategory === 'all' || faq.category === activeCategory;
-        const matchesSearch = faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            faq.answer.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesCategory && matchesSearch;
-    });
+        const matchesCategory =
+            activeCategory === 'all' || faq.category === activeCategory
+        const matchesSearch =
+            faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
+        return matchesCategory && matchesSearch
+    })
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Hero Header */}
             <div className="bg-white border-b-2 border-gray-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
                     <div className="max-w-3xl mx-auto text-center">
@@ -138,17 +107,17 @@ const FAQs = () => {
                             Frequently Asked Questions
                         </h1>
                         <p className="text-xl text-gray-600 leading-relaxed mb-8">
-                            Find quick answers to common questions about orders, shipping, returns, and more
+                            Find answers about enquiries, quotations, safety, and how this
+                            platform works
                         </p>
 
-                        {/* Search Bar */}
                         <div className="relative max-w-2xl mx-auto">
                             <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <input
                                 type="text"
                                 placeholder="Search for answers..."
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={e => setSearchTerm(e.target.value)}
                                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-gray-300 rounded-xl focus:border-orange-500 focus:bg-white outline-none transition-all text-gray-900"
                             />
                         </div>
@@ -157,9 +126,8 @@ const FAQs = () => {
             </div>
 
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* Category Filter */}
                 <div className="flex flex-wrap gap-3 mb-8">
-                    {categories.map((category) => (
+                    {categories.map(category => (
                         <button
                             key={category.id}
                             onClick={() => setActiveCategory(category.id)}
@@ -173,7 +141,6 @@ const FAQs = () => {
                     ))}
                 </div>
 
-                {/* FAQs List */}
                 <div className="space-y-3">
                     {filteredFaqs.length > 0 ? (
                         filteredFaqs.map((faq, index) => (
@@ -182,40 +149,50 @@ const FAQs = () => {
                                 className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden hover:border-orange-300 transition-colors"
                             >
                                 <button
-                                    onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                                    onClick={() =>
+                                        setOpenFaq(openFaq === index ? null : index)
+                                    }
                                     className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
                                 >
-                                    <span className="font-semibold text-gray-900 pr-4">{faq.question}</span>
+                                    <span className="font-semibold text-gray-900 pr-4">
+                                        {faq.question}
+                                    </span>
                                     {openFaq === index ? (
-                                        <FiChevronUp className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                                        <FiChevronUp className="w-5 h-5 text-orange-600" />
                                     ) : (
-                                        <FiChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                                        <FiChevronDown className="w-5 h-5 text-gray-500" />
                                     )}
                                 </button>
                                 {openFaq === index && (
                                     <div className="px-6 py-4 bg-gray-50 border-t-2 border-gray-200">
-                                        <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+                                        <p className="text-gray-600 leading-relaxed">
+                                            {faq.answer}
+                                        </p>
                                     </div>
                                 )}
                             </div>
                         ))
                     ) : (
                         <div className="text-center py-12">
-                            <p className="text-gray-500 text-lg">No questions found matching your search.</p>
-                            <p className="text-gray-400 text-sm mt-2">Try different keywords or browse all categories.</p>
+                            <p className="text-gray-500 text-lg">
+                                No questions found matching your search.
+                            </p>
+                            <p className="text-gray-400 text-sm mt-2">
+                                Try different keywords or browse all categories.
+                            </p>
                         </div>
                     )}
                 </div>
 
-                {/* Still Need Help */}
                 <div className="mt-12 bg-orange-600 rounded-2xl p-8 text-white text-center">
                     <h3 className="text-2xl font-bold mb-4">Still Need Help?</h3>
                     <p className="text-orange-100 mb-6">
-                        Can't find the answer you're looking for? Our support team is here to help.
+                        Have questions about enquiries or how the platform works? Our team
+                        is here to help.
                     </p>
                     <div className="flex flex-wrap gap-4 justify-center">
                         <a
-                            href="/Support"
+                            href="/support"
                             className="bg-white hover:bg-gray-100 text-orange-600 font-semibold px-6 py-3 rounded-lg transition-colors"
                         >
                             Contact Support
@@ -230,7 +207,7 @@ const FAQs = () => {
                 </div>
             </div>
         </div>
-    );
-};
+    )
+}
 
-export default FAQs;
+export default FAQs

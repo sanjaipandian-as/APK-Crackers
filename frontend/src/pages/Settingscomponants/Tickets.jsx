@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { FaTicketAlt, FaClock, FaCheckCircle, FaSpinner, FaTimesCircle, FaEye, FaChevronDown, FaChevronUp, FaInbox } from 'react-icons/fa';
 import API from '../../../api';
+import { SkeletonList } from '../../components/Common/SkeletonLoaders';
 
 const Tickets = () => {
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [expandedTicket, setExpandedTicket] = useState(null);
-    const [filter, setFilter] = useState('all'); // all, pending, in-progress, resolved, closed
+    const [filter, setFilter] = useState('all');
 
     useEffect(() => {
         fetchTickets();
@@ -128,36 +129,50 @@ const Tickets = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading your tickets...</p>
+            <div className="space-y-4 sm:space-y-6">
+                {/* Header Skeleton */}
+                <div className="flex items-center gap-2 sm:gap-3 pb-4 sm:pb-6 border-b border-gray-100 animate-pulse">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-lg sm:rounded-xl flex-shrink-0"></div>
+                    <div className="min-w-0 flex-1 space-y-2">
+                        <div className="h-6 sm:h-8 bg-gray-200 rounded w-48"></div>
+                        <div className="h-3 sm:h-4 bg-gray-200 rounded w-64"></div>
+                    </div>
                 </div>
+
+                {/* Filter Tabs Skeleton */}
+                <div className="flex gap-2 overflow-x-auto pb-2 animate-pulse">
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="h-9 bg-gray-200 rounded-lg w-24 flex-shrink-0"></div>
+                    ))}
+                </div>
+
+                {/* Tickets List Skeleton */}
+                <SkeletonList items={4} />
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-3 pb-6 border-b border-gray-100">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                    <FaTicketAlt className="w-6 h-6 text-orange-600" />
+            <div className="flex items-center gap-2 sm:gap-3 pb-4 sm:pb-6 border-b border-gray-100">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                    <FaTicketAlt className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
                 </div>
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Support Tickets</h2>
-                    <p className="text-sm text-gray-500">Track and manage your support requests</p>
+                <div className="min-w-0 flex-1">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">Support Tickets</h2>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Track and manage your support requests</p>
                 </div>
             </div>
 
             {/* Error Message */}
             {error && (
-                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between">
-                        <p className="text-red-700 font-medium">{error}</p>
+                <div className="bg-red-50 border-2 border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <p className="text-red-700 font-medium text-sm sm:text-base">{error}</p>
                         <button
                             onClick={fetchTickets}
-                            className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-all text-sm"
+                            className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-all text-sm active:scale-95"
                         >
                             Retry
                         </button>
@@ -166,35 +181,39 @@ const Tickets = () => {
             )}
 
             {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-2">
-                {[
-                    { value: 'all', label: 'All Tickets', count: tickets.length },
-                    { value: 'pending', label: 'Pending', count: tickets.filter(t => t.status === 'pending').length },
-                    { value: 'in-progress', label: 'In Progress', count: tickets.filter(t => t.status === 'in-progress').length },
-                    { value: 'resolved', label: 'Resolved', count: tickets.filter(t => t.status === 'resolved').length },
-                    { value: 'closed', label: 'Closed', count: tickets.filter(t => t.status === 'closed').length }
-                ].map((tab) => (
-                    <button
-                        key={tab.value}
-                        onClick={() => setFilter(tab.value)}
-                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${filter === tab.value
-                            ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                    >
-                        {tab.label} ({tab.count})
-                    </button>
-                ))}
+            <div className="-mx-4 sm:mx-0">
+                <div className="flex gap-2 overflow-x-auto px-4 sm:px-0 pb-2 sm:pb-0 scrollbar-hide snap-x snap-mandatory">
+                    {[
+                        { value: 'all', label: 'All', fullLabel: 'All Tickets', count: tickets.length },
+                        { value: 'pending', label: 'Pending', fullLabel: 'Pending', count: tickets.filter(t => t.status === 'pending').length },
+                        { value: 'in-progress', label: 'Progress', fullLabel: 'In Progress', count: tickets.filter(t => t.status === 'in-progress').length },
+                        { value: 'resolved', label: 'Resolved', fullLabel: 'Resolved', count: tickets.filter(t => t.status === 'resolved').length },
+                        { value: 'closed', label: 'Closed', fullLabel: 'Closed', count: tickets.filter(t => t.status === 'closed').length }
+                    ].map((tab) => (
+                        <button
+                            key={tab.value}
+                            onClick={() => setFilter(tab.value)}
+                            className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all whitespace-nowrap flex-shrink-0 snap-start ${filter === tab.value
+                                ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 active:scale-95'
+                                }`}
+                        >
+                            <span className="hidden sm:inline">{tab.fullLabel}</span>
+                            <span className="sm:hidden">{tab.label}</span>
+                            <span className="ml-1">({tab.count})</span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Tickets List */}
             {filteredTickets.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                    <FaInbox className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-lg sm:rounded-xl border-2 border-dashed border-gray-300">
+                    <FaInbox className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 px-4">
                         {filter === 'all' ? 'No support tickets yet' : `No ${filter} tickets`}
                     </h3>
-                    <p className="text-gray-600 mb-6">
+                    <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-4">
                         {filter === 'all'
                             ? 'You haven\'t created any support tickets yet'
                             : `You don't have any ${filter} tickets at the moment`
@@ -202,7 +221,7 @@ const Tickets = () => {
                     </p>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                     {filteredTickets.map((ticket) => {
                         const statusConfig = getStatusConfig(ticket.status);
                         const StatusIcon = statusConfig.icon;
@@ -211,35 +230,35 @@ const Tickets = () => {
                         return (
                             <div
                                 key={ticket._id}
-                                className={`bg-white border-2 ${statusConfig.borderColor} rounded-xl overflow-hidden transition-all hover:shadow-lg`}
+                                className={`bg-white border-2 ${statusConfig.borderColor} rounded-lg sm:rounded-xl overflow-hidden transition-all hover:shadow-lg`}
                             >
                                 {/* Ticket Header */}
-                                <div className="p-6">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1">
+                                <div className="p-3 sm:p-4 md:p-6">
+                                    <div className="flex items-start justify-between gap-2 sm:gap-4">
+                                        <div className="flex-1 min-w-0">
                                             {/* Status Badge */}
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <span className={`inline-flex items-center gap-2 px-3 py-1.5 ${statusConfig.bgColor} ${statusConfig.textColor} rounded-lg font-semibold text-sm`}>
-                                                    <StatusIcon className={`w-4 h-4 ${ticket.status === 'in-progress' ? 'animate-spin' : ''}`} />
-                                                    {statusConfig.label}
+                                            <div className="flex flex-wrap items-center gap-2 mb-2 sm:mb-3">
+                                                <span className={`inline-flex items-center gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 ${statusConfig.bgColor} ${statusConfig.textColor} rounded-md sm:rounded-lg font-semibold text-xs sm:text-sm`}>
+                                                    <StatusIcon className={`w-3 h-3 sm:w-4 sm:h-4 ${ticket.status === 'in-progress' ? 'animate-spin' : ''}`} />
+                                                    <span className="hidden xs:inline">{statusConfig.label}</span>
                                                 </span>
-                                                <span className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg font-medium text-sm">
+                                                <span className="px-2 py-1 sm:px-3 sm:py-1.5 bg-gray-100 text-gray-700 rounded-md sm:rounded-lg font-medium text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">
                                                     {getCategoryLabel(ticket.category)}
                                                 </span>
                                             </div>
 
                                             {/* Ticket Title */}
-                                            <h3 className="text-lg font-bold text-gray-900 mb-2">
+                                            <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-2 line-clamp-2">
                                                 {ticket.subject}
                                             </h3>
 
                                             {/* Ticket Meta */}
-                                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                                                 <span className="flex items-center gap-1">
-                                                    <FaClock className="w-3 h-3" />
-                                                    {formatDate(ticket.createdAt)}
+                                                    <FaClock className="w-3 h-3 flex-shrink-0" />
+                                                    <span className="truncate">{formatDate(ticket.createdAt)}</span>
                                                 </span>
-                                                <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                                                <span className="font-mono text-[10px] sm:text-xs bg-gray-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                                                     #{ticket._id.slice(-8)}
                                                 </span>
                                             </div>
@@ -248,19 +267,19 @@ const Tickets = () => {
                                         {/* Expand Button */}
                                         <button
                                             onClick={() => toggleTicketExpansion(ticket._id)}
-                                            className="p-2 hover:bg-gray-100 rounded-lg transition-all"
+                                            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-all flex-shrink-0 active:scale-95"
                                         >
                                             {isExpanded ? (
-                                                <FaChevronUp className="w-5 h-5 text-gray-600" />
+                                                <FaChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                                             ) : (
-                                                <FaChevronDown className="w-5 h-5 text-gray-600" />
+                                                <FaChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                                             )}
                                         </button>
                                     </div>
 
                                     {/* Status Description */}
-                                    <div className={`mt-4 p-3 ${statusConfig.bgColor} rounded-lg`}>
-                                        <p className={`text-sm ${statusConfig.textColor} font-medium`}>
+                                    <div className={`mt-3 sm:mt-4 p-2 sm:p-3 ${statusConfig.bgColor} rounded-lg`}>
+                                        <p className={`text-xs sm:text-sm ${statusConfig.textColor} font-medium`}>
                                             {statusConfig.description}
                                         </p>
                                     </div>
@@ -268,50 +287,52 @@ const Tickets = () => {
 
                                 {/* Expanded Details */}
                                 {isExpanded && (
-                                    <div className="border-t-2 border-gray-100 bg-gray-50 p-6 space-y-6">
+                                    <div className="border-t-2 border-gray-100 bg-gradient-to-br from-gray-50 to-white p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
                                         {/* Your Message */}
                                         <div>
-                                            <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                                <FaEye className="w-4 h-4 text-orange-500" />
+                                            <h4 className="font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                                                <FaEye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500 flex-shrink-0" />
                                                 Your Message
                                             </h4>
-                                            <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
-                                                <p className="text-gray-700 whitespace-pre-wrap">{ticket.message}</p>
+                                            <div className="bg-white border-2 border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm">
+                                                <p className="text-gray-700 whitespace-pre-wrap text-sm sm:text-base leading-relaxed">{ticket.message}</p>
                                             </div>
                                         </div>
 
                                         {/* Contact Information */}
                                         <div>
-                                            <h4 className="font-bold text-gray-900 mb-3">Contact Information</h4>
-                                            <div className="bg-white border-2 border-gray-200 rounded-lg p-4 space-y-2">
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    <span className="font-semibold text-gray-700 w-20">Name:</span>
-                                                    <span className="text-gray-900">{ticket.name}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    <span className="font-semibold text-gray-700 w-20">Email:</span>
-                                                    <span className="text-gray-900">{ticket.email}</span>
-                                                </div>
-                                                {ticket.phone && (
-                                                    <div className="flex items-center gap-2 text-sm">
-                                                        <span className="font-semibold text-gray-700 w-20">Phone:</span>
-                                                        <span className="text-gray-900">{ticket.phone}</span>
+                                            <h4 className="font-bold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">Contact Information</h4>
+                                            <div className="bg-white border-2 border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                                        <span className="font-semibold text-gray-700 text-xs sm:text-sm">Name:</span>
+                                                        <span className="text-gray-900 text-sm sm:text-base break-words">{ticket.name}</span>
                                                     </div>
-                                                )}
+                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                                        <span className="font-semibold text-gray-700 text-xs sm:text-sm">Email:</span>
+                                                        <span className="text-gray-900 text-sm sm:text-base break-all">{ticket.email}</span>
+                                                    </div>
+                                                    {ticket.phone && (
+                                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                                            <span className="font-semibold text-gray-700 text-xs sm:text-sm">Phone:</span>
+                                                            <span className="text-gray-900 text-sm sm:text-base">{ticket.phone}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
 
                                         {/* Admin Response */}
                                         {ticket.adminResponse && (
                                             <div>
-                                                <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                                    <FaCheckCircle className="w-4 h-4 text-green-500" />
+                                                <h4 className="font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                                                    <FaCheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
                                                     Support Team Response
                                                 </h4>
-                                                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
-                                                    <p className="text-gray-700 whitespace-pre-wrap">{ticket.adminResponse}</p>
+                                                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-3 sm:p-4 shadow-sm">
+                                                    <p className="text-gray-700 whitespace-pre-wrap text-sm sm:text-base leading-relaxed">{ticket.adminResponse}</p>
                                                     {ticket.respondedAt && (
-                                                        <p className="text-xs text-green-600 mt-3 font-medium">
+                                                        <p className="text-xs sm:text-sm text-green-600 mt-2 sm:mt-3 font-medium">
                                                             Responded {formatDate(ticket.respondedAt)}
                                                         </p>
                                                     )}
@@ -321,25 +342,30 @@ const Tickets = () => {
 
                                         {/* Timeline */}
                                         <div>
-                                            <h4 className="font-bold text-gray-900 mb-3">Timeline</h4>
-                                            <div className="space-y-3">
-                                                <div className="flex items-start gap-3">
-                                                    <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                                        <FaTicketAlt className="w-4 h-4 text-white" />
+                                            <h4 className="font-bold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">Timeline</h4>
+                                            <div className="space-y-3 sm:space-y-4 relative">
+                                                {/* Timeline connector line */}
+                                                {ticket.respondedAt && (
+                                                    <div className="absolute left-3.5 sm:left-4 top-8 sm:top-10 bottom-0 w-0.5 bg-gradient-to-b from-orange-300 to-green-300"></div>
+                                                )}
+
+                                                <div className="flex items-start gap-2 sm:gap-3 relative">
+                                                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ring-2 ring-orange-100">
+                                                        <FaTicketAlt className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                                                     </div>
-                                                    <div>
-                                                        <p className="font-semibold text-gray-900">Ticket Created</p>
-                                                        <p className="text-sm text-gray-600">{new Date(ticket.createdAt).toLocaleString('en-IN')}</p>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-semibold text-gray-900 text-sm sm:text-base">Ticket Created</p>
+                                                        <p className="text-xs sm:text-sm text-gray-600 break-words">{new Date(ticket.createdAt).toLocaleString('en-IN')}</p>
                                                     </div>
                                                 </div>
                                                 {ticket.respondedAt && (
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                                            <FaCheckCircle className="w-4 h-4 text-white" />
+                                                    <div className="flex items-start gap-2 sm:gap-3 relative">
+                                                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ring-2 ring-green-100">
+                                                            <FaCheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                                                         </div>
-                                                        <div>
-                                                            <p className="font-semibold text-gray-900">Response Received</p>
-                                                            <p className="text-sm text-gray-600">{new Date(ticket.respondedAt).toLocaleString('en-IN')}</p>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-semibold text-gray-900 text-sm sm:text-base">Response Received</p>
+                                                            <p className="text-xs sm:text-sm text-gray-600 break-words">{new Date(ticket.respondedAt).toLocaleString('en-IN')}</p>
                                                         </div>
                                                     </div>
                                                 )}
@@ -355,8 +381,8 @@ const Tickets = () => {
 
             {/* Help Text */}
             {tickets.length > 0 && (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                    <p className="text-sm text-blue-700">
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                    <p className="text-xs sm:text-sm text-blue-700">
                         <strong>Need more help?</strong> Our support team typically responds within 24 hours.
                         You can create a new ticket from the Support page.
                     </p>

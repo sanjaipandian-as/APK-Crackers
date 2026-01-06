@@ -7,10 +7,10 @@ const API = axios.create({
     },
 });
 
-// Add request interceptor to attach token to all requests
+
 API.interceptors.request.use(
     (config) => {
-        // Check sessionStorage first (for session-based auth), then localStorage
+
         const token = sessionStorage.getItem('token') || localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;

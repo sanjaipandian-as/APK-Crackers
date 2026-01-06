@@ -16,7 +16,7 @@ import {
     FaHome,
     FaFire
 } from 'react-icons/fa';
-import { BsFillBagHeartFill } from 'react-icons/bs';
+
 import API from '../../../api';
 
 const Sidebar = ({ onFiltersChange, showFilter = true }) => {
@@ -126,7 +126,7 @@ const Sidebar = ({ onFiltersChange, showFilter = true }) => {
 
     const handleBusinessAccountClick = () => {
         if (isSellerLoggedIn) {
-            navigate('/seller-home');
+            navigate('/');
         } else {
             navigate('/seller-register');
         }
@@ -289,33 +289,21 @@ const Sidebar = ({ onFiltersChange, showFilter = true }) => {
                         </div>
                     </div>
 
-                    {/* Cart */}
+                    {/* Enquiry List */}
                     <div className="relative group">
                         <button
-                            onClick={() => navigate('/Cart')}
+                            onClick={() => navigate('/enquiry-list')}
                             className="w-14 h-14 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95"
                         >
                             <FaShoppingBag className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
                         </button>
                         <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
-                            Cart
+                            Enquiry List
                             <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
                         </div>
                     </div>
 
-                    {/* Wishlist */}
-                    <div className="relative group">
-                        <button
-                            onClick={() => navigate('/Wishlist')}
-                            className="w-14 h-14 bg-white border-2 border-gray-100 rounded-2xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer group-hover:scale-110 active:scale-95"
-                        >
-                            <BsFillBagHeartFill className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
-                        </button>
-                        <div className="absolute left-20 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 shadow-xl">
-                            Wishlist
-                            <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
-                        </div>
-                    </div>
+
 
                     {/* Filter */}
                     {showFilter && (
@@ -383,7 +371,7 @@ const Sidebar = ({ onFiltersChange, showFilter = true }) => {
                                     <div className="w-8 h-8 md:w-10 md:h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center">
                                         <FaInfinity className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
                                     </div>
-                                    <h2 className="text-sm md:text-base lg:text-lg font-semibold text-gray-800">Cracker Store</h2>
+                                    <h2 className="text-sm md:text-base lg:text-lg font-semibold text-gray-800">Cracker Bridge</h2>
                                 </div>
                             </div>
 
@@ -629,25 +617,17 @@ const Sidebar = ({ onFiltersChange, showFilter = true }) => {
                     </button>
                 </div>
 
-                {/* Cart */}
+                {/* Enquiry List */}
                 <div className="relative group">
                     <button
-                        onClick={() => navigate('/Cart')}
+                        onClick={() => navigate('/enquiry-list')}
                         className="w-12 h-12 bg-white border-2 border-gray-100 rounded-xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer active:scale-95"
                     >
                         <FaShoppingBag className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
                     </button>
                 </div>
 
-                {/* Wishlist */}
-                <div className="relative group">
-                    <button
-                        onClick={() => navigate('/Wishlist')}
-                        className="w-12 h-12 bg-white border-2 border-gray-100 rounded-xl flex items-center justify-center hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 cursor-pointer active:scale-95"
-                    >
-                        <BsFillBagHeartFill className="w-5 h-5 text-gray-700 group-hover:text-orange-600 transition-colors" />
-                    </button>
-                </div>
+
 
                 {/* Filter */}
                 {showFilter && (

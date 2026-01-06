@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import showToast from '../../utils/toast.jsx';
 import { FaUser, FaEnvelope, FaPhone, FaEdit, FaSave, FaKey, FaLock, FaEye, FaEyeSlash, FaTimes } from 'react-icons/fa';
 import API from '../../../api';
 
@@ -23,8 +24,8 @@ const AccountSettings = ({ userData, setUserData }) => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [passwordError, setPasswordError] = useState('');
 
-    const inputClasses = "w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all placeholder:text-gray-400 bg-white hover:border-gray-300";
-    const labelClasses = "block text-sm font-semibold text-gray-700 mb-2.5";
+    const inputClasses = "w-full px-3 sm:px-4 py-2.5 sm:py-3.5 rounded-lg sm:rounded-xl border-2 border-gray-200 text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all placeholder:text-gray-400 bg-white hover:border-gray-300";
+    const labelClasses = "block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2.5";
 
     // Save profile changes
     const handleSaveProfile = async () => {
@@ -59,10 +60,10 @@ const AccountSettings = ({ userData, setUserData }) => {
 
             setUserData(editedData);
             setIsEditingProfile(false);
-            alert('Profile updated successfully!');
+            showToast.success('Profile updated successfully!');
         } catch (error) {
             console.error('Error updating profile:', error);
-            alert(error.response?.data?.message || 'Failed to update profile');
+            showToast.error(error.response?.data?.message || 'Failed to update profile');
         } finally {
             setSaving(false);
         }
@@ -106,7 +107,7 @@ const AccountSettings = ({ userData, setUserData }) => {
                 return;
             }
 
-            alert('Password changed successfully!');
+            showToast.success('Password changed successfully!');
             setShowPasswordForm(false);
             setPasswordData({
                 oldPassword: '',
@@ -122,21 +123,23 @@ const AccountSettings = ({ userData, setUserData }) => {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
+            {/* Header */}
             <div className="flex items-center gap-2 sm:gap-3 pb-4 sm:pb-6 border-b border-gray-100">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg sm:rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-100 to-orange-50 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
                     <FaUser className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
                 </div>
-                <div>
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Account Information</h2>
-                    <p className="text-xs sm:text-sm text-gray-500">Update your personal details and information</p>
+                <div className="min-w-0 flex-1">
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">Account Information</h2>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Update your personal details and information</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:gap-6">
+            {/* Profile Form */}
+            <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6">
                 <div>
                     <label className={labelClasses}>
-                        <FaUser className="inline mr-2 text-orange-500" />
+                        <FaUser className="inline mr-1.5 sm:mr-2 text-orange-500 text-xs sm:text-sm" />
                         Full Name
                     </label>
                     <input
@@ -149,9 +152,9 @@ const AccountSettings = ({ userData, setUserData }) => {
                     />
                 </div>
 
-                <div className="md:col-span-2">
+                <div>
                     <label className={labelClasses}>
-                        <FaEnvelope className="inline mr-2 text-orange-500" />
+                        <FaEnvelope className="inline mr-1.5 sm:mr-2 text-orange-500 text-xs sm:text-sm" />
                         Email Address
                     </label>
                     <input
@@ -164,9 +167,9 @@ const AccountSettings = ({ userData, setUserData }) => {
                     />
                 </div>
 
-                <div className="md:col-span-2">
+                <div>
                     <label className={labelClasses}>
-                        <FaPhone className="inline mr-2 text-orange-500" />
+                        <FaPhone className="inline mr-1.5 sm:mr-2 text-orange-500 text-xs sm:text-sm" />
                         Phone Number
                     </label>
                     <input
@@ -180,13 +183,14 @@ const AccountSettings = ({ userData, setUserData }) => {
                 </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 {!isEditingProfile ? (
                     <button
                         onClick={() => setIsEditingProfile(true)}
-                        className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30"
+                        className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-sm sm:text-base rounded-lg sm:rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
                     >
-                        <FaEdit className="inline mr-2" />
+                        <FaEdit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         Edit Profile
                     </button>
                 ) : (
@@ -194,9 +198,9 @@ const AccountSettings = ({ userData, setUserData }) => {
                         <button
                             onClick={handleSaveProfile}
                             disabled={saving}
-                            className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/30 disabled:opacity-50"
+                            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-sm sm:text-base rounded-lg sm:rounded-xl hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/30 hover:shadow-xl disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2"
                         >
-                            <FaSave className="inline mr-2" />
+                            <FaSave className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             {saving ? 'Saving...' : 'Save Changes'}
                         </button>
                         <button
@@ -204,7 +208,7 @@ const AccountSettings = ({ userData, setUserData }) => {
                                 setIsEditingProfile(false);
                                 setEditedData(userData);
                             }}
-                            className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all"
+                            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gray-100 text-gray-700 font-semibold text-sm sm:text-base rounded-lg sm:rounded-xl hover:bg-gray-200 transition-all active:scale-95"
                         >
                             Cancel
                         </button>
@@ -213,41 +217,41 @@ const AccountSettings = ({ userData, setUserData }) => {
             </div>
 
             {/* Password Section */}
-            <div className="pt-6 border-t border-gray-100">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                        <FaKey className="w-5 h-5 text-orange-600" />
+            <div className="pt-4 sm:pt-6 border-t border-gray-100">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-100 to-orange-50 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <FaKey className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">Password & Security</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900">Password & Security</h3>
                 </div>
 
                 {!showPasswordForm ? (
                     <button
                         onClick={() => setShowPasswordForm(true)}
-                        className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all shadow-sm hover:shadow"
+                        className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gray-100 text-gray-700 font-semibold text-sm sm:text-base rounded-lg sm:rounded-xl hover:bg-gray-200 transition-all shadow-sm hover:shadow active:scale-95 flex items-center justify-center gap-2"
                     >
-                        <FaLock className="inline mr-2" />
+                        <FaLock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         Change Password
                     </button>
                 ) : (
-                    <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl p-6 border-2 border-orange-200">
-                        <div className="flex items-center justify-between mb-6">
-                            <h4 className="text-xl font-bold text-gray-900">Change Password</h4>
+                    <div className="bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-orange-200 shadow-sm">
+                        <div className="flex items-center justify-between mb-4 sm:mb-6">
+                            <h4 className="text-lg sm:text-xl font-bold text-gray-900">Change Password</h4>
                             <button
                                 onClick={() => {
                                     setShowPasswordForm(false);
                                     setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
                                     setPasswordError('');
                                 }}
-                                className="p-2 hover:bg-white rounded-lg transition-all"
+                                className="p-1.5 sm:p-2 hover:bg-white rounded-lg transition-all active:scale-95 flex-shrink-0"
                             >
-                                <FaTimes className="w-5 h-5 text-gray-600" />
+                                <FaTimes className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleChangePassword} className="space-y-6">
+                        <form onSubmit={handleChangePassword} className="space-y-4 sm:space-y-6">
                             {passwordError && (
-                                <div className="p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 font-medium">
+                                <div className="p-3 sm:p-4 bg-red-50 border-2 border-red-200 rounded-lg sm:rounded-xl text-red-700 font-medium text-sm sm:text-base">
                                     {passwordError}
                                 </div>
                             )}
@@ -266,9 +270,9 @@ const AccountSettings = ({ userData, setUserData }) => {
                                     <button
                                         type="button"
                                         onClick={() => setShowOldPassword(!showOldPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                        className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1 active:scale-95"
                                     >
-                                        {showOldPassword ? <FaEyeSlash /> : <FaEye />}
+                                        {showOldPassword ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
                                     </button>
                                 </div>
                             </div>
@@ -287,9 +291,9 @@ const AccountSettings = ({ userData, setUserData }) => {
                                     <button
                                         type="button"
                                         onClick={() => setShowNewPassword(!showNewPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                        className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1 active:scale-95"
                                     >
-                                        {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                                        {showNewPassword ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
                                     </button>
                                 </div>
                             </div>
@@ -308,18 +312,18 @@ const AccountSettings = ({ userData, setUserData }) => {
                                     <button
                                         type="button"
                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                        className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1 active:scale-95"
                                     >
-                                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                                        {showConfirmPassword ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 pt-4">
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2 sm:pt-4">
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50"
+                                    className="w-full sm:flex-1 px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-sm sm:text-base rounded-lg sm:rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 hover:shadow-xl disabled:opacity-50 active:scale-95"
                                 >
                                     {saving ? 'Changing...' : 'Change Password'}
                                 </button>
@@ -330,7 +334,7 @@ const AccountSettings = ({ userData, setUserData }) => {
                                         setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
                                         setPasswordError('');
                                     }}
-                                    className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all"
+                                    className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold text-sm sm:text-base rounded-lg sm:rounded-xl hover:bg-gray-50 transition-all active:scale-95"
                                 >
                                     Cancel
                                 </button>

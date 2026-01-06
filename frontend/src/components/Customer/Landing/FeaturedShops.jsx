@@ -82,7 +82,7 @@ const FeaturedShops = () => {
                         Featured Brands
                     </h2>
                     <p className="mt-2 text-sm sm:text-base text-gray-600 text-center md:text-left max-w-3xl">
-                        Discover trusted brands offering premium quality crackers and fireworks
+                        Browse trusted sellers and request quotations for premium quality crackers
                     </p>
                 </div>
 

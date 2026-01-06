@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FaEye, FaEyeSlash, FaGoogle, FaFacebook } from 'react-icons/fa';
-import { toast } from 'react-toastify';
+import showToast from '../../utils/toast.jsx';
 import API from '../../../api';
 
 const Login = () => {
+    useEffect(() => {
+        document.title = 'Customer Login - APK Crackers';
+    }, []);
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -53,7 +56,7 @@ const Login = () => {
                 localStorage.setItem('loginTime', new Date().getTime().toString());
 
                 setSuccess('Login successful! Redirecting...');
-                toast.success('Login successful!');
+                showToast.success('Login successful!');
 
                 setTimeout(() => {
                     window.location.href = '/';
@@ -63,7 +66,7 @@ const Login = () => {
             console.error('Login error:', err);
             const errorMessage = err.response?.data?.message || 'Login failed. Please check your credentials.';
             setError(errorMessage);
-            toast.error(errorMessage);
+            showToast.error(errorMessage);
         } finally {
             setLoading(false);
         }
