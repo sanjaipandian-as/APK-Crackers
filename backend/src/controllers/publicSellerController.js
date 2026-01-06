@@ -30,16 +30,19 @@ export const getAllPublicSellers = async (req, res) => {
 
                 return {
                     _id: seller._id,
-                    businessName: seller.businessName, // Brand name
-                    name: seller.name, // Owner name
+                    businessName: seller.businessName,
+                    name: seller.name,
+                    phone: seller.phone,
                     businessType: seller.businessType,
                     kycStatus: seller.kycStatus,
                     address: {
+                        addressLine: seller.businessAddress?.addressLine,
+                        landmark: seller.businessAddress?.landmark,
                         city: seller.businessAddress?.city,
                         state: seller.businessAddress?.state,
                         pincode: seller.businessAddress?.pincode
                     },
-                    rating: 4.5, // Default rating
+                    rating: 4.5,
                     totalProducts: productCount,
                     createdAt: seller.createdAt
                 };

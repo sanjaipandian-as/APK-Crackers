@@ -17,36 +17,27 @@ connectDB();
 const app = express();
 
 // =========================
-// ⭐ Security Middlewares
-// =========================
-app.use(helmet());
-// app.use(mongoSanitize());
-// app.use(xss());
-
-app.use(
-  rateLimit({
-    windowMs: 10 * 60 * 1000, // 10 minutes
-    max: 200,
-    message: "Too many requests from this IP, please try again later.",
-  })
-);
-
-// Disable Express signature in production
-if (process.env.NODE_ENV === "production") {
-  app.disable("x-powered-by");
-}
-
-// =========================
-// ⭐ CORS
+// ⭐ CORS & Security Middlewares
 // =========================
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      "https://apk-crackers.vercel.app"
     ],
     credentials: true,
+  })
+);
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+app.use(
+  rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 2000, // Increased for development
+    message: "Too many requests from this IP, please try again later.",
   })
 );
 
@@ -87,6 +78,7 @@ import payoutRoutes from "./src/routes/payoutRoutes.js";
 import sellerProfileRoutes from "./src/routes/sellerProfileRoutes.js";
 import supportRoutes from "./src/routes/supportRoutes.js";
 import publicSellerRoutes from "./src/routes/publicSellerRoutes.js";
+import quotationRoutes from "./src/routes/quotationRoutes.js";
 
 
 // =========================
@@ -134,6 +126,7 @@ app.use("/api/search", searchRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/sellers", publicSellerRoutes);
+app.use("/api/quotations", quotationRoutes);
 
 
 // =========================

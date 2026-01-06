@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '../components/Customer/Sidebar';
 import Products from '../components/Customer/Products';
 import Searchbar from '../components/Customer/Topbar';
@@ -7,6 +7,9 @@ import LandingPage from '../components/Customer/LandingPage';
 import Footer from '../components/Customer/Footer';
 
 const Homepage = () => {
+    useEffect(() => {
+        document.title = 'APK Crackers - Sivakasi Firecrackers Online Store';
+    }, []);
     const [filters, setFilters] = useState({
         priceRange: [0, 50000],
         selectedBrands: [],

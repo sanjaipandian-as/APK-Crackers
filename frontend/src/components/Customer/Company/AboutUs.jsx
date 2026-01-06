@@ -1,6 +1,10 @@
+import { useEffect } from 'react';
 import { FiAward, FiShield, FiUsers, FiTrendingUp, FiHeart, FiTarget } from 'react-icons/fi';
 
 const AboutUs = () => {
+    useEffect(() => {
+        document.title = 'About Us - APK Crackers';
+    }, []);
     const stats = [
         { number: '25+', label: 'Years of Excellence' },
         { number: '10M+', label: 'Happy Customers' },

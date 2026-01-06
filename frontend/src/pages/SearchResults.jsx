@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import showToast from '../utils/toast.jsx';
 import { FaStar, FaShoppingCart, FaHeart, FaSearch, FaFilter, FaTimes, FaCheckCircle, FaExclamationCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import API from '../../api';
 import Topbar from '../components/Customer/Topbar';
@@ -62,7 +63,6 @@ const SearchResults = () => {
     const [addingToCart, setAddingToCart] = useState(null);
     const [cartItems, setCartItems] = useState([]);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
-    const [notification, setNotification] = useState({ show: false, message: '', type: '' });
     const [expandedSections, setExpandedSections] = useState({
         sort: true,
         category: true,
@@ -88,6 +88,9 @@ const SearchResults = () => {
             fetchSearchResults();
             fetchWishlist();
             fetchCart();
+            document.title = `Search results for "${query}" - APK Crackers`;
+        } else {
+            document.title = 'Search Products - APK Crackers';
         }
     }, [query]);
 
@@ -130,9 +133,10 @@ const SearchResults = () => {
         let filtered = [...allResults];
 
         if (debouncedFilters.category) {
-            filtered = filtered.filter(p =>
-                p.category?.toLowerCase() === debouncedFilters.category.toLowerCase()
-            );
+            filtered = filtered.filter(p => {
+                const categoryValue = typeof p.category === 'object' ? p.category?.main : p.category;
+                return categoryValue?.toLowerCase() === debouncedFilters.category.toLowerCase();
+            });
         }
 
         if (debouncedFilters.maxPrice) {
@@ -217,11 +221,11 @@ const SearchResults = () => {
         }
     };
 
-    const addToCart = async (e, product) => {
+    const addToEnquiry = async (e, product) => {
         e.stopPropagation();
         const token = localStorage.getItem('token');
         if (!token) {
-            showNotification('Please login to add items to cart', 'error');
+            showNotification('Please login to add items to enquiry list', 'error');
             setTimeout(() => navigate('/Login'), 1500);
             return;
         }
@@ -232,21 +236,20 @@ const SearchResults = () => {
                 productId: product._id,
                 quantity: 1
             });
-            showNotification('Added to cart successfully!', 'success');
+            showNotification('Added to enquiry list successfully!', 'success');
             fetchCart();
         } catch (error) {
-            console.error('Add to cart error:', error);
-            showNotification(error.response?.data?.message || 'Failed to add to cart', 'error');
+            console.error('Add to enquiry error:', error);
+            showNotification(error.response?.data?.message || 'Failed to add to enquiry list', 'error');
         } finally {
             setAddingToCart(null);
         }
     };
 
     const showNotification = (message, type) => {
-        setNotification({ show: true, message, type });
-        setTimeout(() => {
-            setNotification({ show: false, message: '', type: '' });
-        }, 3000);
+        if (type === 'success') showToast.success(message);
+        else if (type === 'error') showToast.error(message);
+        else showToast.info(message);
     };
 
     const clearFilters = () => {
@@ -353,7 +356,10 @@ const SearchResults = () => {
                         <span className="ml-auto text-xs text-gray-500">({allResults.length})</span>
                     </label>
                     {categories.map(cat => {
-                        const count = allResults.filter(p => p.category?.toLowerCase() === cat.toLowerCase()).length;
+                        const count = allResults.filter(p => {
+                            const categoryValue = typeof p.category === 'object' ? p.category?.main : p.category;
+                            return categoryValue?.toLowerCase() === cat.toLowerCase();
+                        }).length;
                         return (
                             <label key={cat} className="flex items-center cursor-pointer hover:bg-orange-50 p-2 rounded-lg transition-colors group">
                                 <input
@@ -454,13 +460,6 @@ const SearchResults = () => {
             <style>{rangeSliderStyles}</style>
             <Topbar />
 
-            {notification.show && (
-                <div className={`fixed top-20 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg transform transition-all ${notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                    }`}>
-                    {notification.type === 'success' ? <FaCheckCircle className="w-5 h-5" /> : <FaExclamationCircle className="w-5 h-5" />}
-                    <span className="font-medium">{notification.message}</span>
-                </div>
-            )}
 
             {showMobileFilters && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden" onClick={() => setShowMobileFilters(false)}>
@@ -552,9 +551,15 @@ const SearchResults = () => {
                                         >
                                             <div className="relative w-full aspect-[4/3] overflow-hidden cursor-pointer">
                                                 <img
-                                                    src={product.images?.[0] || 'https://img.freepik.com/premium-photo/illustration-diwali-crackers-in-the-sky-white-background_756405-49701.jpg?w=2000'}
+                                                    src={product.images?.[0] || '/images/placeholder.jpg'}
                                                     alt={product.name}
                                                     className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        if (e.target.src !== window.location.origin + '/images/placeholder.jpg') {
+                                                            e.target.src = '/images/placeholder.jpg';
+                                                        }
+                                                        e.target.onerror = null;
+                                                    }}
                                                 />
                                                 <button
                                                     onClick={(e) => toggleWishlist(e, product._id)}
@@ -592,7 +597,9 @@ const SearchResults = () => {
                                                 <div className="flex items-center justify-between mb-3">
                                                     <div className="flex flex-col">
                                                         <span className="text-xs text-gray-500 font-medium mb-1">Category</span>
-                                                        <span className="text-sm font-bold text-gray-800 capitalize">{product.category || 'General'}</span>
+                                                        <span className="text-sm font-bold text-gray-800 capitalize">
+                                                            {typeof product.category === 'object' ? product.category?.main : product.category || 'General'}
+                                                        </span>
                                                     </div>
                                                     <div className="flex flex-col items-end">
                                                         <span className="text-xs text-gray-500 font-medium mb-1">Stock</span>
@@ -611,18 +618,18 @@ const SearchResults = () => {
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                navigate('/cart');
+                                                                navigate('/enquiry-list');
                                                             }}
                                                             className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-orange-500 text-orange-600 rounded-lg transition-all shadow-sm hover:shadow-md hover:bg-orange-50 cursor-pointer"
                                                         >
                                                             <FaCheckCircle className="w-4 h-4" />
                                                             <span className="text-sm font-medium">
-                                                                Go to Cart ({cartItem?.quantity || 1})
+                                                                View Enquiry ({cartItem?.quantity || 1})
                                                             </span>
                                                         </button>
                                                     ) : (
                                                         <button
-                                                            onClick={(e) => addToCart(e, product)}
+                                                            onClick={(e) => addToEnquiry(e, product)}
                                                             disabled={addingToCart === product._id || product.stock <= 0}
                                                             className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-all shadow-sm hover:shadow-md ${addingToCart === product._id || product.stock <= 0
                                                                 ? 'bg-gray-400 cursor-not-allowed'
@@ -638,7 +645,7 @@ const SearchResults = () => {
                                                                 <>
                                                                     <FaShoppingCart className="w-4 h-4" />
                                                                     <span className="text-sm font-medium">
-                                                                        {product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                                                                        {product.stock <= 0 ? 'Out of Stock' : 'Add to Enquiry'}
                                                                     </span>
                                                                 </>
                                                             )}

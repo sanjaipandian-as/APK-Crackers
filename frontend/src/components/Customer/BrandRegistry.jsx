@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     FaCheckCircle,
@@ -19,8 +19,10 @@ import {
 } from 'react-icons/fa';
 
 const BrandRegistry = () => {
+    useEffect(() => {
+        document.title = 'Brand Registry - APK Crackers';
+    }, []);
     const navigate = useNavigate();
-    const [openFaq, setOpenFaq] = useState(null);
 
     const brandLogos = [
         'Standard', 'Coronation', 'Cock Brand', 'Sony', 'Ayyan', 'Peacock', 'Celebration', 'Shakthi'

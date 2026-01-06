@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaStar, FaShoppingCart, FaCheckCircle, FaExclamationCircle, FaTag } from 'react-icons/fa';
+import showToast from '../../utils/toast.jsx';
+import { FaStar, FaClipboardList, FaCheckCircle, FaExclamationCircle, FaTag } from 'react-icons/fa';
 import { BsFillBagHeartFill } from 'react-icons/bs';
 import API from '../../../api';
+import { SkeletonGrid } from '../Common/SkeletonLoaders';
 
 const Products = ({ filters = {} }) => {
     const navigate = useNavigate();
     const [addingToCart, setAddingToCart] = useState(null);
-    const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -175,17 +177,16 @@ const Products = ({ filters = {} }) => {
     }, [navigate]);
 
     const showNotification = useCallback((message, type) => {
-        setNotification({ show: true, message, type });
-        setTimeout(() => {
-            setNotification({ show: false, message: '', type: '' });
-        }, 3000);
+        if (type === 'success') showToast.success(message);
+        else if (type === 'error') showToast.error(message);
+        else showToast.info(message);
     }, []);
 
-    const handleAddToCart = async (e, productId) => {
+    const handleAddToEnquiry = async (e, productId) => {
         e.stopPropagation();
 
         if (!isLoggedIn) {
-            showNotification('Please login to add items to cart', 'error');
+            showNotification('Please login to add items to enquiry list', 'error');
             setTimeout(() => navigate('/Login'), 1500);
             return;
         }
@@ -198,17 +199,17 @@ const Products = ({ filters = {} }) => {
                 quantity: 1
             });
 
-            showNotification('Added to cart successfully!', 'success');
+            showNotification('Added to enquiry list successfully!', 'success');
 
             const response = await API.get('/cart');
             setCartItems(response.data.items || []);
         } catch (error) {
-            console.error('Add to cart error:', error);
+            console.error('Add to enquiry error:', error);
             if (error.response?.status === 401) {
                 showNotification('Session expired. Please login again', 'error');
                 setTimeout(() => navigate('/Login'), 1500);
             } else {
-                showNotification(error.response?.data?.message || 'Failed to add to cart', 'error');
+                showNotification(error.response?.data?.message || 'Failed to add to enquiry list', 'error');
             }
         } finally {
             setAddingToCart(null);
@@ -227,9 +228,94 @@ const Products = ({ filters = {} }) => {
         return (
             <div
                 onClick={() => handleProductClick(product._id)}
-                className="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 cursor-pointer active:scale-98"
+                className="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 cursor-pointer active:scale-98 flex flex-row sm:flex-col"
             >
-                <div className="relative w-full aspect-[4/3] overflow-hidden cursor-pointer">
+                {/* Mobile: Details on Left, Image on Right | Desktop: Image on Top */}
+                <div className="flex-1 sm:flex-none p-3 sm:p-4 order-1 sm:order-2">
+                    <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2 flex-1">{product.name}</h3>
+                        <div className="flex items-center gap-1 bg-gray-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded cursor-pointer flex-shrink-0">
+                            <FaStar className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-yellow-400" />
+                            <span className="text-xs sm:text-sm font-medium text-gray-700">4.2</span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] sm:text-xs text-gray-500 font-medium mb-0.5 sm:mb-1">Category</span>
+                            <span className="text-xs sm:text-sm font-bold text-gray-800 capitalize">{product.category?.main || 'General'}</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] sm:text-xs text-gray-500 font-medium mb-0.5 sm:mb-1">Brand</span>
+                            <span className="text-xs sm:text-sm font-bold text-orange-600 capitalize">
+                                {brandName}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100 gap-2">
+                        <div className="flex flex-col">
+                            <span className="text-base sm:text-lg md:text-xl font-black text-gray-900 leading-none">
+                                ₹{sellingPrice >= 1000
+                                    ? Math.round(sellingPrice)
+                                    : (sellingPrice % 1 === 0 ? Math.round(sellingPrice) : sellingPrice.toFixed(1))}
+                            </span>
+                            <div className="flex items-center gap-2 mt-1.5">
+                                <span className="text-[8px] sm:text-[9px] font-bold text-orange-500 uppercase tracking-widest px-1.5 py-0.5 bg-orange-50 rounded border border-orange-100 whitespace-nowrap">
+                                    E. Price
+                                </span>
+                                {mrp > sellingPrice && (
+                                    <span className="text-[10px] sm:text-xs text-gray-400 line-through font-medium">
+                                        ₹{mrp >= 1000
+                                            ? Math.round(mrp)
+                                            : (mrp % 1 === 0 ? Math.round(mrp) : mrp.toFixed(1))}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {inCart ? (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/enquiry-list');
+                                }}
+                                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-white border-2 border-orange-500 text-orange-600 rounded-lg transition-all shadow-sm hover:shadow-md hover:bg-orange-50 cursor-pointer active:scale-95"
+                            >
+                                <FaCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                                <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+                                    In List ({cartItem?.quantity || 1})
+                                </span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={(e) => handleAddToEnquiry(e, product._id)}
+                                disabled={addingToCart === product._id || availablePieces <= 0}
+                                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-white rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 ${addingToCart === product._id || availablePieces <= 0
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 cursor-pointer'
+                                    }`}
+                            >
+                                {addingToCart === product._id ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white"></div>
+                                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Adding...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <FaClipboardList className="w-3 h-3 sm:w-4 sm:h-4" />
+                                        <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+                                            {availablePieces <= 0 ? 'Out' : 'Add'}
+                                        </span>
+                                    </>
+                                )}
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Mobile: Image on Right | Desktop: Image on Top */}
+                <div className="relative w-32 sm:w-full aspect-square sm:aspect-[4/3] overflow-hidden cursor-pointer flex-shrink-0 order-2 sm:order-1">
                     <img
                         src={product.images?.[0] || '/images/placeholder.jpg'}
                         alt={product.name}
@@ -270,102 +356,19 @@ const Products = ({ filters = {} }) => {
                         </div>
                     )}
                 </div>
-
-                <div className="p-3 sm:p-4">
-                    <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
-                        <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2 flex-1">{product.name}</h3>
-                        <div className="flex items-center gap-1 bg-gray-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded cursor-pointer flex-shrink-0">
-                            <FaStar className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-yellow-400" />
-                            <span className="text-xs sm:text-sm font-medium text-gray-700">4.2</span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between mb-2 sm:mb-3">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] sm:text-xs text-gray-500 font-medium mb-0.5 sm:mb-1">Category</span>
-                            <span className="text-xs sm:text-sm font-bold text-gray-800 capitalize">{product.category?.main || 'General'}</span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[10px] sm:text-xs text-gray-500 font-medium mb-0.5 sm:mb-1">Brand</span>
-                            <span className="text-xs sm:text-sm font-bold text-orange-600 capitalize">
-                                {brandName}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100 gap-2">
-                        <div className="flex flex-col">
-                            <span className="text-base sm:text-lg md:text-xl font-bold text-gray-800">₹{sellingPrice.toFixed(2)}</span>
-                            {mrp > sellingPrice && (
-                                <span className="text-[10px] sm:text-xs text-gray-400 line-through">₹{mrp.toFixed(2)}</span>
-                            )}
-                        </div>
-
-                        {inCart ? (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate('/cart');
-                                }}
-                                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-white border-2 border-orange-500 text-orange-600 rounded-lg transition-all shadow-sm hover:shadow-md hover:bg-orange-50 cursor-pointer active:scale-95"
-                            >
-                                <FaCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                                <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
-                                    Cart ({cartItem?.quantity || 1})
-                                </span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={(e) => handleAddToCart(e, product._id)}
-                                disabled={addingToCart === product._id || availablePieces <= 0}
-                                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-white rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 ${addingToCart === product._id || availablePieces <= 0
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 cursor-pointer'
-                                    }`}
-                            >
-                                {addingToCart === product._id ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white"></div>
-                                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Adding...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <FaShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
-                                        <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
-                                            {availablePieces <= 0 ? 'Out' : 'Add'}
-                                        </span>
-                                    </>
-                                )}
-                            </button>
-                        )}
-                    </div>
-                </div>
             </div>
         );
-    }, [wishlistItems, togglingWishlist, addingToCart, isInCart, getCartItem, handleProductClick, toggleWishlist, handleAddToCart, navigate]);
+    }, [wishlistItems, togglingWishlist, addingToCart, isInCart, getCartItem, handleProductClick, toggleWishlist, handleAddToEnquiry, navigate]);
 
     return (
         <div className="w-full bg-gray-50 pb-20 md:pb-0 mt-10">
 
-            {notification.show && (
-                <div className={`fixed top-16 sm:top-20 right-3 sm:right-6 left-3 sm:left-auto z-50 flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-lg shadow-lg transform transition-all ${notification.type === 'success'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-red-500 text-white'
-                    }`}>
-                    {notification.type === 'success' ? (
-                        <FaCheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                    ) : (
-                        <FaExclamationCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                    )}
-                    <span className="font-medium text-sm sm:text-base">{notification.message}</span>
-                </div>
-            )}
 
             <div className="p-3 sm:p-4 md:p-6">
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-16 sm:py-20">
-                        <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-orange-500"></div>
+                    <div className="py-4">
+                        <SkeletonGrid items={8} columns={4} />
                     </div>
                 ) : error ? (
                     <div className="flex flex-col items-center justify-center py-16 sm:py-20 px-4">

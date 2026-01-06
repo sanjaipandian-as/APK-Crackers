@@ -1,10 +1,12 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
+import showToast from '../utils/toast.jsx';
 import { FaUser, FaBell, FaShoppingBag, FaMapMarkerAlt, FaCheck, FaBox, FaTicketAlt } from 'react-icons/fa';
+import { SkeletonForm } from '../components/Common/SkeletonLoaders';
 
 // Lazy load components for better performance
 const AccountSettings = lazy(() => import('./Settingscomponants/AccountSettings'));
-const OrdersPage = lazy(() => import('./Orderspage'));
+const OrdersPage = lazy(() => import('../components/Customer/Quotations'));
 const AddressManagement = lazy(() => import('./Settingscomponants/AddressManagement'));
 const NotificationSettings = lazy(() => import('./Settingscomponants/NotificationSettings'));
 const Tickets = lazy(() => import('./Settingscomponants/Tickets'));
@@ -30,7 +32,7 @@ const Settings = () => {
     useEffect(() => {
         const tabTitles = {
             'account': 'Account Settings',
-            'orders': 'My Orders',
+            'orders': 'My Quatation',
             'addresses': 'My Addresses',
             'tickets': 'Support Tickets',
             'notifications': 'Notifications'
@@ -62,7 +64,7 @@ const Settings = () => {
             }
         } catch (error) {
             console.error('Error fetching user data:', error);
-            alert('Failed to load user data');
+            showToast.error('Failed to load user data');
         } finally {
             setLoading(false);
         }
@@ -70,28 +72,63 @@ const Settings = () => {
 
     const tabs = [
         { id: 'account', label: 'Account', icon: FaUser, description: 'Personal information' },
-        { id: 'orders', label: 'My Orders', icon: FaBox, description: 'Track your orders' },
+        { id: 'orders', label: 'My Quatation', icon: FaBox, description: 'Track your orders' },
         { id: 'addresses', label: 'Addresses', icon: FaMapMarkerAlt, description: 'Manage delivery addresses' },
         { id: 'tickets', label: 'Support Tickets', icon: FaTicketAlt, description: 'View support tickets' },
         { id: 'notifications', label: 'Notifications', icon: FaBell, description: 'Manage alerts' }
     ];
 
-    // Loading spinner component
-    const LoadingSpinner = () => (
-        <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-                <p className="text-gray-600 font-medium">Loading...</p>
-            </div>
-        </div>
-    );
-
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/30 to-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading settings...</p>
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/30 to-gray-50 flex flex-col">
+                {/* Header Skeleton */}
+                <div className="bg-white border-b border-gray-200 shadow-sm">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+                        <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 animate-pulse">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gray-200 rounded-xl sm:rounded-2xl"></div>
+                            <div className="text-center space-y-2">
+                                <div className="h-8 bg-gray-200 rounded w-32 mx-auto"></div>
+                                <div className="h-4 bg-gray-200 rounded w-48 mx-auto"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile Tabs Skeleton */}
+                <div className="lg:hidden bg-white border-b border-gray-200 overflow-x-auto">
+                    <div className="flex gap-2 p-3 animate-pulse">
+                        {[...Array(5)].map((_, i) => (
+                            <div key={i} className="h-10 bg-gray-200 rounded-lg w-32 flex-shrink-0"></div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex-1 flex overflow-hidden">
+                    <div className="flex w-full">
+                        {/* Desktop Sidebar Skeleton */}
+                        <div className="hidden lg:block w-80 flex-shrink-0 bg-white border-r border-gray-200">
+                            <div className="p-6 space-y-2 animate-pulse">
+                                {[...Array(5)].map((_, i) => (
+                                    <div key={i} className="flex items-center gap-4 p-4 rounded-xl">
+                                        <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                                        <div className="flex-1 space-y-2">
+                                            <div className="h-4 bg-gray-200 rounded w-24"></div>
+                                            <div className="h-3 bg-gray-200 rounded w-32"></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Main Content Skeleton */}
+                        <div className="flex-1 overflow-y-auto">
+                            <div className="bg-white h-full">
+                                <div className="p-4 sm:p-6 lg:p-8">
+                                    <SkeletonForm />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -177,7 +214,7 @@ const Settings = () => {
                     <div className="flex-1 overflow-y-auto">
                         <div className="bg-white h-full">
                             <div className="p-4 sm:p-6 lg:p-8">
-                                <Suspense fallback={<LoadingSpinner />}>
+                                <Suspense fallback={<SkeletonForm />}>
                                     {/* Account Settings */}
                                     {activeTab === 'account' && (
                                         <AccountSettings userData={userData} setUserData={setUserData} />
@@ -185,18 +222,7 @@ const Settings = () => {
 
                                     {/* My Orders */}
                                     {activeTab === 'orders' && (
-                                        <div className="space-y-8">
-                                            <div className="flex items-center gap-3 pb-6 border-b border-gray-100">
-                                                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                                                    <FaBox className="w-6 h-6 text-orange-600" />
-                                                </div>
-                                                <div>
-                                                    <h2 className="text-2xl font-bold text-gray-900">My Orders</h2>
-                                                    <p className="text-sm text-gray-500">Track and manage your orders</p>
-                                                </div>
-                                            </div>
-                                            <OrdersPage />
-                                        </div>
+                                        <OrdersPage standalone={false} />
                                     )}
 
                                     {/* Address Management */}

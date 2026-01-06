@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaHandPointer, FaShareAlt, FaMoneyBillWave, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const Affiliate = () => {
+    useEffect(() => {
+        document.title = 'Affiliate Associates - APK Crackers';
+    }, []);
     const navigate = useNavigate();
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
 

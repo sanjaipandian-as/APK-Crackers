@@ -10,72 +10,119 @@ const kycSchema = new mongoose.Schema(
       index: true,
     },
 
+    // Identity Documents
     identity: {
+      panCard: {
+        type: String,
+        trim: true,
+        required: true,
+      },
       aadhaarFront: {
         type: String,
         trim: true,
+        required: true,
       },
       aadhaarBack: {
         type: String,
         trim: true,
-      },
-      panCard: {
-        type: String,
-        trim: true,
+        required: true,
       },
     },
 
+    // Business Documents
     business: {
-      tradeLicense: {
-        type: String,
-        trim: true,
-      },
       gstCertificate: {
         type: String,
         trim: true,
+        required: true,
+      },
+      gstNumber: {
+        type: String,
+        trim: true,
+        required: true,
+      },
+      incorporationCertificate: {
+        type: String,
+        trim: true,
+      },
+      cinOrLlpin: {
+        type: String,
+        trim: true,
       },
     },
 
-    explosiveLicense: {
-      licenseType: {
+    // PESO Licenses (Petroleum and Explosives Safety Organisation)
+    pesoLicenses: {
+      // LE-1: Manufacturing License
+      le1Manufacturing: {
+        document: {
+          type: String,
+          trim: true,
+        },
+        licenseNumber: {
+          type: String,
+          trim: true,
+        },
+        expiryDate: {
+          type: Date,
+        },
+      },
+      // LE-2: Shop License
+      le2Shop: {
+        document: {
+          type: String,
+          trim: true,
+        },
+        licenseNumber: {
+          type: String,
+          trim: true,
+        },
+        expiryDate: {
+          type: Date,
+        },
+      },
+      // LE-3: Storage License
+      le3Storage: {
+        document: {
+          type: String,
+          trim: true,
+        },
+        licenseNumber: {
+          type: String,
+          trim: true,
+        },
+        expiryDate: {
+          type: Date,
+        },
+      },
+      // LE-5/LE-6: Sale/Transport License
+      le5Le6SaleTransport: {
+        document: {
+          type: String,
+          trim: true,
+        },
+        licenseNumber: {
+          type: String,
+          trim: true,
+        },
+        expiryDate: {
+          type: Date,
+        },
+      },
+    },
+
+    // NEERI QR Certification (National Environmental Engineering Research Institute)
+    neeriQR: {
+      certificate: {
         type: String,
         trim: true,
       },
-      licenseNumber: {
-        type: String,
-        trim: true,
-      },
-      licenseImage: {
+      certificationNumber: {
         type: String,
         trim: true,
       },
       expiryDate: {
         type: Date,
-      },
-    },
-
-    fireNOC: {
-      nocDocument: {
-        type: String,
-        trim: true,
-      },
-      expiryDate: {
-        type: Date,
-      },
-    },
-
-    bank: {
-      accountNumber: {
-        type: String,
-        trim: true,
-      },
-      ifsc: {
-        type: String,
-        trim: true,
-      },
-      chequeImage: {
-        type: String,
-        trim: true,
       },
     },
 

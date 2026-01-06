@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FaSearch, FaBell, FaUser, FaSignOutAlt, FaInfinity, FaBars, FaTimes } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import showToast from '../../utils/toast.jsx';
 import API from '../../../api';
 
 const Searchbar = () => {
@@ -135,10 +135,7 @@ const Searchbar = () => {
                 if (hoursPassed >= 24) {
                     console.log('Session expired after 24 hours. Logging out...');
                     handleLogout();
-                    toast.info('Your session has expired. Please login again.', {
-                        position: "top-center",
-                        autoClose: 5000,
-                    });
+                    showToast.info('Your session has expired. Please login again.');
                     return;
                 }
             }
@@ -168,10 +165,7 @@ const Searchbar = () => {
                 if (hoursPassed >= 24) {
                     console.log('Session expired after 24 hours. Logging out...');
                     handleLogout();
-                    toast.info('Your session has expired. Please login again.', {
-                        position: "top-center",
-                        autoClose: 5000,
-                    });
+                    showToast.info('Your session has expired. Please login again.');
                 }
             }
         }, 5 * 60 * 1000); // Check every 5 minutes

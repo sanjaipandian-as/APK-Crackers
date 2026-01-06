@@ -4,8 +4,9 @@ import API from '../../../../api';
 import Topbar from '../Topbar';
 import Sidebar from '../Sidebar';
 import Footer from '../Footer';
-import { FaArrowLeft, FaFilter, FaTimes, FaShoppingCart, FaStar, FaHeart } from 'react-icons/fa';
+import { FaArrowLeft, FaFilter, FaTimes, FaClipboardList, FaStar, FaHeart } from 'react-icons/fa';
 import { BsFillBagHeartFill } from 'react-icons/bs';
+import LegalDisclaimer from '../../Common/LegalDisclaimer';
 
 // Memoized Product Card Component for better performance
 const ProductCard = React.memo(({
@@ -19,16 +20,102 @@ const ProductCard = React.memo(({
     onAddToWishlist
 }) => {
     return (
-        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all group">
-            {/* Product Image */}
-            <div
-                className="aspect-square relative overflow-hidden bg-gray-100 cursor-pointer"
+        <div className="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-gray-100 cursor-pointer active:scale-98 flex flex-row sm:flex-col">
+            {/* Mobile: Details on Left | Desktop: Details on Bottom */}
+            <div className="flex-1 sm:flex-none p-3 sm:p-4 order-1 sm:order-2">
+                {/* Product Name */}
+                <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                    <h3
+                        className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-2 flex-1 cursor-pointer hover:text-orange-500 transition-colors"
+                        onClick={() => onProductClick(product._id)}
+                    >
+                        {product.name}
+                    </h3>
+                    <div className="flex items-center gap-1 bg-gray-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded flex-shrink-0">
+                        <FaStar className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-yellow-400" />
+                        <span className="text-xs sm:text-sm font-medium text-gray-700">4.2</span>
+                    </div>
+                </div>
+
+                {/* Category and Brand */}
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] sm:text-xs text-gray-500 font-medium mb-0.5 sm:mb-1">Category</span>
+                        <span className="text-xs sm:text-sm font-bold text-gray-800 capitalize">{product.category.main}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] sm:text-xs text-gray-500 font-medium mb-0.5 sm:mb-1">Brand</span>
+                        <span className="text-xs sm:text-sm font-bold text-orange-600 capitalize">{product.brand}</span>
+                    </div>
+                </div>
+
+                {/* Price and Add to Cart */}
+                <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100 gap-2">
+                    <div className="flex flex-col">
+                        <span className="text-base sm:text-lg md:text-xl font-black text-gray-900 leading-none">
+                            ₹{product.pricing.selling_price.toLocaleString('en-IN')}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-[8px] sm:text-[9px] font-bold text-orange-500 uppercase tracking-widest px-1.5 py-0.5 bg-orange-50 rounded border border-orange-100 whitespace-nowrap">
+                                E. Price
+                            </span>
+                            {product.pricing.mrp && product.pricing.mrp > product.pricing.selling_price && (
+                                <span className="text-[10px] sm:text-xs text-gray-400 line-through font-medium">
+                                    ₹{product.pricing.mrp.toLocaleString('en-IN')}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {inCart ? (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onAddToCart(product);
+                            }}
+                            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-white border-2 border-orange-500 text-orange-600 rounded-lg transition-all shadow-sm hover:shadow-md hover:bg-orange-50 cursor-pointer active:scale-95"
+                        >
+                            <FaClipboardList className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="text-xs sm:text-sm font-medium whitespace-nowrap">In List</span>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onAddToCart(product);
+                            }}
+                            disabled={addingToCart === product._id || product.stock_control.available_pieces <= 0}
+                            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-white rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 ${addingToCart === product._id || product.stock_control.available_pieces <= 0
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 cursor-pointer'
+                                }`}
+                        >
+                            {addingToCart === product._id ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white"></div>
+                                    <span className="text-xs sm:text-sm font-medium hidden sm:inline">Adding...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <FaClipboardList className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+                                        {product.stock_control.available_pieces <= 0 ? 'Out' : 'Add'}
+                                    </span>
+                                </>
+                            )}
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Mobile: Image on Right | Desktop: Image on Top */}
+            <div className="relative w-32 sm:w-full aspect-square sm:aspect-square overflow-hidden bg-gray-100 cursor-pointer flex-shrink-0 order-2 sm:order-1"
                 onClick={() => onProductClick(product._id)}
             >
                 <img
                     src={product.images[0]}
                     alt={product.name}
-                    loading="lazy" // Lazy load images for better performance
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     onError={(e) => {
                         e.target.src = '/images/placeholder.jpg';
@@ -36,7 +123,7 @@ const ProductCard = React.memo(({
                     }}
                 />
                 {product.discount_percentage > 0 && (
-                    <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-md text-xs font-bold">
+                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-red-500 text-white px-2 py-1 rounded-md text-xs font-bold z-20">
                         {product.discount_percentage}% OFF
                     </div>
                 )}
@@ -48,7 +135,7 @@ const ProductCard = React.memo(({
                         onAddToWishlist(product);
                     }}
                     disabled={addingToWishlist === product._id}
-                    className={`absolute top-2 left-2 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-all ${inWishlist
+                    className={`absolute top-2 left-2 sm:top-3 sm:left-3 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shadow-lg transition-all z-20 ${inWishlist
                         ? 'bg-red-500 text-white'
                         : 'bg-white text-gray-600 hover:bg-red-50 hover:text-red-500'
                         }`}
@@ -56,83 +143,9 @@ const ProductCard = React.memo(({
                     {addingToWishlist === product._id ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-orange-500"></div>
                     ) : (
-                        <FaHeart className={`w-4 h-4 ${inWishlist ? 'fill-current' : ''}`} />
+                        <FaHeart className={`w-3 h-3 sm:w-4 sm:h-4 ${inWishlist ? 'fill-current' : ''}`} />
                     )}
                 </button>
-            </div>
-
-            {/* Product Info */}
-            <div className="p-4">
-                {/* Product Name */}
-                <h3
-                    className="font-semibold text-gray-900 mb-2 line-clamp-2 text-sm md:text-base cursor-pointer hover:text-orange-600 transition-colors"
-                    onClick={() => onProductClick(product._id)}
-                >
-                    {product.name}
-                </h3>
-
-                {/* Category and Brand */}
-                <div className="flex items-center justify-between mb-3 text-xs text-gray-600">
-                    <div>
-                        <p className="text-[10px] text-gray-400 uppercase">Category</p>
-                        <p className="font-semibold text-gray-700">{product.category.main}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-[10px] text-gray-400 uppercase">Brand</p>
-                        <p className="font-semibold text-orange-500">{product.brand}</p>
-                    </div>
-                </div>
-
-                {/* Rating */}
-                <div className="flex items-center gap-1 mb-3">
-                    <FaStar className="w-3 h-3 text-yellow-400" />
-                    <span className="text-sm font-semibold text-gray-700">4.2</span>
-                </div>
-
-                {/* Price and Add to Cart */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <span className="text-xl md:text-2xl font-bold text-gray-900">
-                            ₹{product.pricing.selling_price.toLocaleString('en-IN')}
-                        </span>
-                        {product.pricing.mrp && product.pricing.mrp > product.pricing.selling_price && (
-                            <div className="text-xs text-gray-500 line-through">
-                                ₹{product.pricing.mrp.toLocaleString('en-IN')}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Add to Cart Button */}
-                    <button
-                        onClick={() => onAddToCart(product)}
-                        disabled={
-                            addingToCart === product._id ||
-                            product.stock_control.available_pieces <= 0
-                        }
-                        className={`px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all ${product.stock_control.available_pieces <= 0
-                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : inCart
-                                ? 'bg-green-500 text-white hover:bg-green-600'
-                                : 'bg-orange-500 text-white hover:bg-orange-600'
-                            }`}
-                    >
-                        {addingToCart === product._id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                        ) : product.stock_control.available_pieces <= 0 ? (
-                            <span className="text-xs">Out of Stock</span>
-                        ) : inCart ? (
-                            <>
-                                <FaShoppingCart className="w-4 h-4" />
-                                <span className="hidden sm:inline">Added</span>
-                            </>
-                        ) : (
-                            <>
-                                <FaShoppingCart className="w-4 h-4" />
-                                <span className="hidden sm:inline">Add</span>
-                            </>
-                        )}
-                    </button>
-                </div>
             </div>
         </div>
     );
@@ -177,6 +190,13 @@ const CategoriesSpecificpage = () => {
     useEffect(() => {
         fetchProducts();
     }, [categorySlug, currentPage, filters]);
+
+    // Update document title
+    useEffect(() => {
+        if (categoryName) {
+            document.title = `${categoryName} - APK Crackers`;
+        }
+    }, [categoryName]);
 
     const fetchCart = async () => {
         try {
@@ -306,7 +326,7 @@ const CategoriesSpecificpage = () => {
         );
 
         if (isInCart) {
-            navigate('/Cart');
+            navigate('/enquiry-list');
             return;
         }
 
@@ -399,6 +419,11 @@ const CategoriesSpecificpage = () => {
                                 <span>Filters</span>
                             </button>
                         </div>
+                    </div>
+
+                    {/* Legal Disclaimer */}
+                    <div className="mb-6">
+                        <LegalDisclaimer variant="compact" />
                     </div>
 
                     {/* Products Grid */}
