@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: "https://apk-crackers.onrender.com/api",
+    baseURL: "https://apk-crackers-zaeo.onrender.com/api",
     headers: {
         "Content-Type": "application/json",
     },
